@@ -48,6 +48,10 @@ export function normalizeOptionLabel(value: string) {
   return value.trim().replace(/\s+/g, " ");
 }
 
+function compareOptionLabel<T extends { label: string }>(a: T, b: T) {
+  return a.label.localeCompare(b.label, undefined, { sensitivity: "base" });
+}
+
 export async function listApplicationOptionsTree(db: DbOrTransaction = getDb()) {
   const rows = await db
     .selectFrom("application_option_items")
@@ -62,7 +66,8 @@ export async function listApplicationOptionsTree(db: DbOrTransaction = getDb()) 
   const courses = rows.filter((item) => item.kind === "course");
   const supportProviders = rows
     .filter((item) => item.kind === "support_provider")
-    .map((item) => ({ id: item.id, label: item.label, sort_order: item.sort_order }));
+    .map((item) => ({ id: item.id, label: item.label, sort_order: item.sort_order }))
+    .sort(compareOptionLabel);
 
   const facultiesByCampus = new Map<string, FacultyOptionNode[]>();
   for (const faculty of faculties) {
@@ -96,10 +101,12 @@ export async function listApplicationOptionsTree(db: DbOrTransaction = getDb()) 
   }
 
   const campusTree: CampusOptionNode[] = campuses.map((campus) => {
-    const campusFaculties = (facultiesByCampus.get(campus.id) ?? []).map((faculty) => ({
-      ...faculty,
-      courses: coursesByFaculty.get(faculty.id) ?? [],
-    }));
+    const campusFaculties = (facultiesByCampus.get(campus.id) ?? [])
+      .map((faculty) => ({
+        ...faculty,
+        courses: [...(coursesByFaculty.get(faculty.id) ?? [])].sort(compareOptionLabel),
+      }))
+      .sort(compareOptionLabel);
 
     return {
       id: campus.id,
@@ -107,7 +114,7 @@ export async function listApplicationOptionsTree(db: DbOrTransaction = getDb()) 
       sort_order: campus.sort_order,
       faculties: campusFaculties,
     };
-  });
+  }).sort(compareOptionLabel);
 
   return {
     campuses: campusTree,

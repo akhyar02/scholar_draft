@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type CourseNode = {
   id: string;
@@ -35,6 +35,36 @@ type ApplicationOptions = {
 
 function normalizeLine(value: string) {
   return value.trim().replace(/\s+/g, " ");
+}
+
+function splitNormalizedLines(text: string) {
+  return text.split("\n").map(normalizeLine).filter(Boolean);
+}
+
+function appendUniqueLine(text: string, line: string) {
+  const nextLine = normalizeLine(line);
+  if (!nextLine) {
+    return text;
+  }
+
+  const existingLines = splitNormalizedLines(text);
+  const existingSet = new Set(existingLines.map((item) => item.toLowerCase()));
+  if (existingSet.has(nextLine.toLowerCase())) {
+    return existingLines.join("\n");
+  }
+
+  return [...existingLines, nextLine].join("\n");
+}
+
+function removeExactLine(text: string, lineToRemove: string) {
+  const target = normalizeLine(lineToRemove).toLowerCase();
+  return splitNormalizedLines(text)
+    .filter((line) => line.toLowerCase() !== target)
+    .join("\n");
+}
+
+function compareLabel(a: string, b: string) {
+  return a.localeCompare(b, undefined, { sensitivity: "base" });
 }
 
 function buildInitialText(options: ApplicationOptions) {
@@ -196,6 +226,175 @@ export function AdminApplicationOptionsManager({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [facultyCampusDraft, setFacultyCampusDraft] = useState(initialOptions.campuses[0]?.label ?? "");
+  const [facultyLabelDraft, setFacultyLabelDraft] = useState("");
+  const [courseCampusDraft, setCourseCampusDraft] = useState(initialOptions.campuses[0]?.label ?? "");
+  const [courseFacultyDraft, setCourseFacultyDraft] = useState(
+    initialOptions.campuses[0]?.faculties[0]?.label ?? "",
+  );
+  const [courseLabelDraft, setCourseLabelDraft] = useState("");
+
+  const campusLabels = useMemo(() => {
+    const labels = splitNormalizedLines(campusesText);
+    const seen = new Set<string>();
+    return labels
+      .filter((label) => {
+      const key = label.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+      })
+      .sort(compareLabel);
+  }, [campusesText]);
+
+  const facultyMappings = useMemo(() => {
+    return splitNormalizedLines(facultiesText)
+      .map((line) => {
+        const segments = line.split(">").map(normalizeLine);
+        if (segments.length !== 2 || !segments[0] || !segments[1]) return null;
+        return {
+          line,
+          campus: segments[0],
+          faculty: segments[1],
+        };
+      })
+      .filter((item): item is { line: string; campus: string; faculty: string } => item !== null);
+  }, [facultiesText]);
+
+  const courseMappings = useMemo(() => {
+    return splitNormalizedLines(coursesText)
+      .map((line) => {
+        const segments = line.split(">").map(normalizeLine);
+        if (segments.length !== 3 || !segments[0] || !segments[1] || !segments[2]) return null;
+        return {
+          line,
+          campus: segments[0],
+          faculty: segments[1],
+          course: segments[2],
+        };
+      })
+      .filter(
+        (item): item is { line: string; campus: string; faculty: string; course: string } => item !== null,
+      )
+      .sort((a, b) => {
+        const campusCompare = compareLabel(a.campus, b.campus);
+        if (campusCompare !== 0) return campusCompare;
+        const facultyCompare = compareLabel(a.faculty, b.faculty);
+        if (facultyCompare !== 0) return facultyCompare;
+        return compareLabel(a.course, b.course);
+      });
+  }, [coursesText]);
+
+  const facultiesByCampus = useMemo(() => {
+    const map = new Map<string, string[]>();
+    for (const mapping of facultyMappings) {
+      const key = mapping.campus.toLowerCase();
+      const existing = map.get(key) ?? [];
+      if (!existing.some((item) => item.toLowerCase() === mapping.faculty.toLowerCase())) {
+        existing.push(mapping.faculty);
+      }
+      existing.sort(compareLabel);
+      map.set(key, existing);
+    }
+    return map;
+  }, [facultyMappings]);
+
+  const availableCourseFaculties = useMemo(() => {
+    return facultiesByCampus.get(courseCampusDraft.toLowerCase()) ?? [];
+  }, [courseCampusDraft, facultiesByCampus]);
+
+  useEffect(() => {
+    if (campusLabels.length === 0) {
+      setFacultyCampusDraft("");
+      return;
+    }
+
+    if (!campusLabels.some((label) => label.toLowerCase() === facultyCampusDraft.toLowerCase())) {
+      setFacultyCampusDraft(campusLabels[0]);
+    }
+  }, [campusLabels, facultyCampusDraft]);
+
+  useEffect(() => {
+    if (campusLabels.length === 0) {
+      setCourseCampusDraft("");
+      return;
+    }
+
+    if (!campusLabels.some((label) => label.toLowerCase() === courseCampusDraft.toLowerCase())) {
+      setCourseCampusDraft(campusLabels[0]);
+    }
+  }, [campusLabels, courseCampusDraft]);
+
+  useEffect(() => {
+    if (availableCourseFaculties.length === 0) {
+      setCourseFacultyDraft("");
+      return;
+    }
+
+    if (
+      !availableCourseFaculties.some(
+        (faculty) => faculty.toLowerCase() === courseFacultyDraft.toLowerCase(),
+      )
+    ) {
+      setCourseFacultyDraft(availableCourseFaculties[0]);
+    }
+  }, [availableCourseFaculties, courseFacultyDraft]);
+
+  function addFacultyMapping() {
+    const campus = normalizeLine(facultyCampusDraft);
+    const faculty = normalizeLine(facultyLabelDraft);
+
+    if (!campus || !faculty) {
+      setError("Choose a campus and enter a faculty name.");
+      return;
+    }
+
+    setFacultiesText((prev) => appendUniqueLine(prev, `${campus} > ${faculty}`));
+    setFacultyLabelDraft("");
+    setError(null);
+    setSuccess(null);
+  }
+
+  function removeFacultyMapping(campus: string, faculty: string) {
+    const facultyLine = `${campus} > ${faculty}`;
+    setFacultiesText((prev) => removeExactLine(prev, facultyLine));
+    setCoursesText((prev) =>
+      splitNormalizedLines(prev)
+        .filter((line) => {
+          const segments = line.split(">").map(normalizeLine);
+          return !(
+            segments.length === 3 &&
+            segments[0].toLowerCase() === campus.toLowerCase() &&
+            segments[1].toLowerCase() === faculty.toLowerCase()
+          );
+        })
+        .join("\n"),
+    );
+    setError(null);
+    setSuccess(null);
+  }
+
+  function addCourseMapping() {
+    const campus = normalizeLine(courseCampusDraft);
+    const faculty = normalizeLine(courseFacultyDraft);
+    const course = normalizeLine(courseLabelDraft);
+
+    if (!campus || !faculty || !course) {
+      setError("Choose a campus and faculty, then enter a course name.");
+      return;
+    }
+
+    setCoursesText((prev) => appendUniqueLine(prev, `${campus} > ${faculty} > ${course}`));
+    setCourseLabelDraft("");
+    setError(null);
+    setSuccess(null);
+  }
+
+  function removeCourseMapping(campus: string, faculty: string, course: string) {
+    setCoursesText((prev) => removeExactLine(prev, `${campus} > ${faculty} > ${course}`));
+    setError(null);
+    setSuccess(null);
+  }
 
   async function onSave(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -251,26 +450,176 @@ export function AdminApplicationOptionsManager({
 
       <div className="space-y-1">
         <label className="text-sm font-medium text-surface-700">Faculty Mapping (one per line)</label>
-        <textarea
-          rows={8}
-          className="w-full rounded-xl border-0 bg-surface-50 px-4 py-3 text-surface-900 shadow-sm ring-1 ring-inset ring-surface-200 focus:ring-2 focus:ring-inset focus:ring-primary-600"
-          value={facultiesText}
-          onChange={(event) => setFacultiesText(event.target.value)}
-          placeholder="Cyberjaya > FCI"
-        />
-        <p className="text-xs text-surface-500">Format: Campus {'>'} Faculty</p>
+        <div className="rounded-xl bg-surface-50 p-3 ring-1 ring-inset ring-surface-200">
+          <p className="mb-2 text-xs font-medium text-surface-600">Quick add faculty</p>
+          <div className="grid gap-2 sm:grid-cols-[1fr_1.2fr_auto]">
+            <select
+              className="rounded-lg border-0 bg-white px-3 py-2 text-sm text-surface-900 shadow-sm ring-1 ring-inset ring-surface-200 focus:ring-2 focus:ring-primary-600"
+              value={facultyCampusDraft}
+              onChange={(event) => setFacultyCampusDraft(event.target.value)}
+              disabled={campusLabels.length === 0}
+            >
+              {campusLabels.length === 0 ? (
+                <option value="">Add a campus first</option>
+              ) : null}
+              {campusLabels.map((campus) => (
+                <option key={campus} value={campus}>
+                  {campus}
+                </option>
+              ))}
+            </select>
+            <input
+              type="text"
+              className="rounded-lg border-0 bg-white px-3 py-2 text-sm text-surface-900 shadow-sm ring-1 ring-inset ring-surface-200 focus:ring-2 focus:ring-primary-600"
+              value={facultyLabelDraft}
+              onChange={(event) => setFacultyLabelDraft(event.target.value)}
+              placeholder="e.g. FCI"
+            />
+            <button
+              type="button"
+              onClick={addFacultyMapping}
+              className="rounded-lg bg-surface-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+              disabled={campusLabels.length === 0}
+            >
+              Add
+            </button>
+          </div>
+
+          {campusLabels.length > 0 ? (
+            <div className="mt-3 space-y-2">
+              {campusLabels.map((campus) => {
+                const faculties = facultiesByCampus.get(campus.toLowerCase()) ?? [];
+                return (
+                  <div key={campus} className="rounded-lg bg-white p-2 ring-1 ring-inset ring-surface-200">
+                    <p className="text-xs font-semibold text-surface-600">{campus}</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {faculties.length === 0 ? (
+                        <span className="text-xs text-surface-500">No faculties yet</span>
+                      ) : (
+                        faculties.map((faculty) => (
+                          <button
+                            key={`${campus}-${faculty}`}
+                            type="button"
+                            onClick={() => removeFacultyMapping(campus, faculty)}
+                            className="rounded-full bg-surface-100 px-3 py-1 text-xs text-surface-700 ring-1 ring-inset ring-surface-200 hover:bg-surface-200"
+                            title="Remove faculty and its course mappings"
+                          >
+                            {faculty} ×
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
+        </div>
       </div>
 
       <div className="space-y-1">
         <label className="text-sm font-medium text-surface-700">Course Mapping (one per line)</label>
-        <textarea
-          rows={10}
-          className="w-full rounded-xl border-0 bg-surface-50 px-4 py-3 text-surface-900 shadow-sm ring-1 ring-inset ring-surface-200 focus:ring-2 focus:ring-inset focus:ring-primary-600"
-          value={coursesText}
-          onChange={(event) => setCoursesText(event.target.value)}
-          placeholder="Cyberjaya > FCI > Foundation"
-        />
-        <p className="text-xs text-surface-500">Format: Campus {'>'} Faculty {'>'} Course</p>
+        <div className="rounded-xl bg-surface-50 p-3 ring-1 ring-inset ring-surface-200">
+          <p className="mb-2 text-xs font-medium text-surface-600">Quick add course</p>
+          <div className="grid gap-2 sm:grid-cols-[1fr_1fr_1.2fr_auto]">
+            <select
+              className="rounded-lg border-0 bg-white px-3 py-2 text-sm text-surface-900 shadow-sm ring-1 ring-inset ring-surface-200 focus:ring-2 focus:ring-primary-600"
+              value={courseCampusDraft}
+              onChange={(event) => setCourseCampusDraft(event.target.value)}
+              disabled={campusLabels.length === 0}
+            >
+              {campusLabels.length === 0 ? (
+                <option value="">Add a campus first</option>
+              ) : null}
+              {campusLabels.map((campus) => (
+                <option key={campus} value={campus}>
+                  {campus}
+                </option>
+              ))}
+            </select>
+            <select
+              className="rounded-lg border-0 bg-white px-3 py-2 text-sm text-surface-900 shadow-sm ring-1 ring-inset ring-surface-200 focus:ring-2 focus:ring-primary-600"
+              value={courseFacultyDraft}
+              onChange={(event) => setCourseFacultyDraft(event.target.value)}
+              disabled={availableCourseFaculties.length === 0}
+            >
+              {availableCourseFaculties.length === 0 ? (
+                <option value="">Add a faculty first</option>
+              ) : null}
+              {availableCourseFaculties.map((faculty) => (
+                <option key={`${courseCampusDraft}-${faculty}`} value={faculty}>
+                  {faculty}
+                </option>
+              ))}
+            </select>
+            <input
+              type="text"
+              className="rounded-lg border-0 bg-white px-3 py-2 text-sm text-surface-900 shadow-sm ring-1 ring-inset ring-surface-200 focus:ring-2 focus:ring-primary-600"
+              value={courseLabelDraft}
+              onChange={(event) => setCourseLabelDraft(event.target.value)}
+              placeholder="e.g. Foundation"
+            />
+            <button
+              type="button"
+              onClick={addCourseMapping}
+              className="rounded-lg bg-surface-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+              disabled={campusLabels.length === 0 || availableCourseFaculties.length === 0}
+            >
+              Add
+            </button>
+          </div>
+
+          {campusLabels.length > 0 ? (
+            <div className="mt-3 space-y-2">
+              {campusLabels.map((campus) => {
+                const faculties = facultiesByCampus.get(campus.toLowerCase()) ?? [];
+                if (faculties.length === 0) {
+                  return null;
+                }
+
+                return (
+                  <div key={`courses-${campus}`} className="rounded-lg bg-white p-2 ring-1 ring-inset ring-surface-200">
+                    <p className="text-xs font-semibold text-surface-600">{campus}</p>
+                    <div className="mt-2 space-y-2">
+                      {faculties.map((faculty) => {
+                        const courses = courseMappings.filter(
+                          (mapping) =>
+                            mapping.campus.toLowerCase() === campus.toLowerCase() &&
+                            mapping.faculty.toLowerCase() === faculty.toLowerCase(),
+                        );
+
+                        return (
+                          <div key={`${campus}-${faculty}`} className="rounded-md bg-surface-50 p-2">
+                            <p className="text-xs font-medium text-surface-600">{faculty}</p>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {courses.length === 0 ? (
+                                <span className="text-xs text-surface-500">No courses yet</span>
+                              ) : (
+                                courses.map((mapping) => (
+                                  <button
+                                    key={mapping.line}
+                                    type="button"
+                                    onClick={() =>
+                                      removeCourseMapping(mapping.campus, mapping.faculty, mapping.course)
+                                    }
+                                    className="rounded-full bg-white px-3 py-1 text-xs text-surface-700 ring-1 ring-inset ring-surface-200 hover:bg-surface-100"
+                                    title="Remove course mapping"
+                                  >
+                                    {mapping.course} ×
+                                  </button>
+                                ))
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
+        </div>
       </div>
 
       <div className="space-y-1">
