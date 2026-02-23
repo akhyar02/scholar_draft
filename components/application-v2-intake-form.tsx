@@ -15,36 +15,25 @@ import {
   RELIGIONS,
   type ApplicationStatus,
 } from "@/lib/constants";
+import type {
+  ApplicationOptionsTree,
+  PublicSubmitApplicationRequest,
+  StudentUpdateDraftRequest,
+} from "@/lib/api/contracts";
+import { publicApi } from "@/lib/api/services/public-client";
+import { studentApi } from "@/lib/api/services/student-client";
 import { createDefaultApplicationFormV2, isApplicationFormV2 } from "@/lib/application-v2";
 import type { ApplicationFormPayloadV2, SiblingMemberPayload } from "@/lib/db/types";
 
-type CampusOption = {
-  id: string;
-  label: string;
-  sort_order: number;
-  faculties: Array<{
-    id: string;
-    label: string;
-    sort_order: number;
-    courses: Array<{
-      id: string;
-      label: string;
-      sort_order: number;
-    }>;
-  }>;
-};
-
-type SupportProviderOption = {
-  id: string;
-  label: string;
-  sort_order: number;
-};
+type CampusOption = ApplicationOptionsTree["campuses"][number];
+type SupportProviderOption = ApplicationOptionsTree["supportProviders"][number];
+type DocumentMimeType = (typeof ALLOWED_DOCUMENT_MIME_TYPES)[number];
 
 type UploadedAttachment = {
   slotKey: string;
   s3Key: string;
   fileName: string;
-  mimeType: string;
+  mimeType: DocumentMimeType;
   sizeBytes: number;
 };
 
@@ -73,7 +62,14 @@ function normalizeAttachment(raw: AttachmentLike): UploadedAttachment | null {
   const mimeType = raw.mimeType ?? raw.mime_type;
   const sizeBytes = raw.sizeBytes ?? raw.size_bytes;
 
-  if (!slotKey || !s3Key || !fileName || !mimeType || typeof sizeBytes !== "number") {
+  if (
+    !slotKey ||
+    !s3Key ||
+    !fileName ||
+    !mimeType ||
+    typeof sizeBytes !== "number" ||
+    !ALLOWED_DOCUMENT_MIME_TYPES.includes(mimeType as DocumentMimeType)
+  ) {
     return null;
   }
 
@@ -81,7 +77,7 @@ function normalizeAttachment(raw: AttachmentLike): UploadedAttachment | null {
     slotKey,
     s3Key,
     fileName,
-    mimeType,
+    mimeType: mimeType as DocumentMimeType,
     sizeBytes,
   };
 }
@@ -343,15 +339,11 @@ export function ApplicationV2IntakeForm({
       setOptionsLoading(true);
 
       try {
-        const response = await fetch("/api/public/application-options", { cache: "no-store" });
-        const data = await response.json().catch(() => null);
-        if (!response.ok) {
-          throw new Error(data?.error?.message ?? "Failed to load application options");
-        }
+        const data = await publicApi.getApplicationOptions({ cache: "no-store" });
 
         if (mounted) {
-          setCampuses(data.options?.campuses ?? []);
-          setSupportProviders(data.options?.supportProviders ?? []);
+          setCampuses(data.options.campuses);
+          setSupportProviders(data.options.supportProviders);
         }
       } catch (err) {
         if (mounted) {
@@ -388,31 +380,39 @@ export function ApplicationV2IntakeForm({
       if (file.size > MAX_DOCUMENT_SIZE_BYTES) {
         throw new Error("File exceeds 10MB size limit.");
       }
+      const mimeType = file.type as DocumentMimeType;
 
-      const uploadEndpoint = mode === "public"
-        ? "/api/public/upload-url"
-        : `/api/student/applications/${applicationId}/upload-url`;
+      const uploadMeta = mode === "public"
+        ? (() => {
+            if (!scholarshipId) {
+              throw new Error("Scholarship ID is required");
+            }
 
-      const uploadMetaResponse = await fetch(uploadEndpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...(mode === "public" ? { scholarshipId } : {}),
-          slotKey,
-          fileName: file.name,
-          mimeType: file.type,
-          sizeBytes: file.size,
-        }),
-      });
+            return publicApi.createApplicationUploadUrl({
+              scholarshipId,
+              slotKey,
+              fileName: file.name,
+              mimeType,
+              sizeBytes: file.size,
+            });
+          })()
+        : (() => {
+            if (!applicationId) {
+              throw new Error("Application ID is required");
+            }
 
-      const uploadMeta = await uploadMetaResponse.json().catch(() => null);
-      if (!uploadMetaResponse.ok) {
-        throw new Error(uploadMeta?.error?.message ?? "Failed to prepare upload");
-      }
+            return studentApi.createApplicationUploadUrl(applicationId, {
+              slotKey,
+              fileName: file.name,
+              mimeType,
+              sizeBytes: file.size,
+            });
+          })();
+      const resolvedUploadMeta = await uploadMeta;
 
-      const uploadResponse = await fetch(uploadMeta.uploadUrl, {
+      const uploadResponse = await fetch(resolvedUploadMeta.uploadUrl, {
         method: "PUT",
-        headers: uploadMeta.requiredHeaders,
+        headers: resolvedUploadMeta.requiredHeaders,
         body: file,
       });
 
@@ -421,31 +421,26 @@ export function ApplicationV2IntakeForm({
       }
 
       if (mode === "student") {
-        const confirmResponse = await fetch(`/api/student/applications/${applicationId}/documents/confirm`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            slotKey,
-            s3Key: uploadMeta.s3Key,
-            fileName: file.name,
-            mimeType: file.type,
-            sizeBytes: file.size,
-          }),
-        });
-
-        const confirmData = await confirmResponse.json().catch(() => null);
-        if (!confirmResponse.ok) {
-          throw new Error(confirmData?.error?.message ?? "Failed to confirm uploaded attachment");
+        if (!applicationId) {
+          throw new Error("Application ID is required");
         }
+
+        await studentApi.confirmApplicationDocument(applicationId, {
+          slotKey,
+          s3Key: resolvedUploadMeta.s3Key,
+          fileName: file.name,
+          mimeType,
+          sizeBytes: file.size,
+        });
       }
 
       setAttachments((previous) => {
         const next = previous.filter((item) => item.slotKey !== slotKey);
         next.push({
           slotKey,
-          s3Key: uploadMeta.s3Key,
+          s3Key: resolvedUploadMeta.s3Key,
           fileName: file.name,
-          mimeType: file.type,
+          mimeType,
           sizeBytes: file.size,
         });
         return next;
@@ -467,16 +462,9 @@ export function ApplicationV2IntakeForm({
     setSuccess(null);
 
     try {
-      const response = await fetch(`/api/student/applications/${applicationId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ payload: form }),
-      });
-
-      const data = await response.json().catch(() => null);
-      if (!response.ok) {
-        throw new Error(data?.error?.message ?? "Failed to save draft");
-      }
+      await studentApi.updateApplicationDraft(applicationId, {
+        payload: form,
+      } as StudentUpdateDraftRequest);
 
       setSuccess("Draft saved.");
       router.refresh();
@@ -495,20 +483,15 @@ export function ApplicationV2IntakeForm({
 
     try {
       if (mode === "public") {
-        const response = await fetch("/api/public/applications", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            scholarshipId,
-            form,
-            attachments,
-          }),
-        });
-
-        const data = await response.json().catch(() => null);
-        if (!response.ok) {
-          throw new Error(data?.error?.message ?? "Application submission failed");
+        if (!scholarshipId) {
+          throw new Error("Scholarship ID is required");
         }
+
+        await publicApi.submitApplication({
+          scholarshipId,
+          form,
+          attachments,
+        } as PublicSubmitApplicationRequest);
 
         setSuccess("Application submitted successfully.");
         setForm(createDefaultApplicationFormV2({ fullName: "", email: "", mobileNumber: "" }));
@@ -516,14 +499,11 @@ export function ApplicationV2IntakeForm({
       } else {
         await saveDraft();
 
-        const response = await fetch(`/api/student/applications/${applicationId}/submit`, {
-          method: "POST",
-        });
-
-        const data = await response.json().catch(() => null);
-        if (!response.ok) {
-          throw new Error(data?.error?.message ?? "Failed to submit application");
+        if (!applicationId) {
+          throw new Error("Application ID is required");
         }
+
+        await studentApi.submitApplication(applicationId);
 
         setSuccess("Application submitted successfully.");
         router.refresh();

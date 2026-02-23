@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { studentApi } from "@/lib/api/services/student-client";
+
 export function CreateApplicationButton({ scholarshipId }: { scholarshipId: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -13,17 +15,7 @@ export function CreateApplicationButton({ scholarshipId }: { scholarshipId: stri
     setError(null);
 
     try {
-      const response = await fetch("/api/student/applications", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ scholarshipId }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data?.error?.message ?? "Failed to create application");
-      }
+      const data = await studentApi.createApplication({ scholarshipId });
 
       router.push(`/student/applications/${data.applicationId}`);
     } catch (err) {

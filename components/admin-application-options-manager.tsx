@@ -2,36 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-type CourseNode = {
-  id: string;
-  label: string;
-  sort_order: number;
-};
-
-type FacultyNode = {
-  id: string;
-  label: string;
-  sort_order: number;
-  courses: CourseNode[];
-};
-
-type CampusNode = {
-  id: string;
-  label: string;
-  sort_order: number;
-  faculties: FacultyNode[];
-};
-
-type SupportProviderNode = {
-  id: string;
-  label: string;
-  sort_order: number;
-};
-
-type ApplicationOptions = {
-  campuses: CampusNode[];
-  supportProviders: SupportProviderNode[];
-};
+import {
+  type ApplicationOptionsTree as ApplicationOptions,
+} from "@/lib/api/contracts";
+import { adminApi } from "@/lib/api/services/admin-client";
 
 function normalizeLine(value: string) {
   return value.trim().replace(/\s+/g, " ");
@@ -403,25 +377,16 @@ export function AdminApplicationOptionsManager({
     setSuccess(null);
 
     try {
-      const payload = parseTreeFromText({
+      const rawPayload = parseTreeFromText({
         campusesText,
         facultiesText,
         coursesText,
         providersText,
       });
 
-      const response = await fetch("/api/admin/application-options", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const data = await adminApi.updateApplicationOptions(rawPayload);
 
-      const data = await response.json().catch(() => null);
-      if (!response.ok) {
-        throw new Error(data?.error?.message ?? "Failed to save application options");
-      }
-
-      const nextText = buildInitialText(data.options as ApplicationOptions);
+      const nextText = buildInitialText(data.options);
       setCampusesText(nextText.campuses);
       setFacultiesText(nextText.faculties);
       setCoursesText(nextText.courses);

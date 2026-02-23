@@ -2,11 +2,8 @@
 
 import { useMemo, useState } from "react";
 
-type StudyProgram = {
-  id: string;
-  name: string;
-  sort_order: number;
-};
+import { type StudyProgram } from "@/lib/api/contracts";
+import { adminApi } from "@/lib/api/services/admin-client";
 
 export function AdminStudyProgramsManager({
   initialPrograms,
@@ -30,23 +27,14 @@ export function AdminStudyProgramsManager({
     setSuccess(null);
 
     try {
-      const programs = lines
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean);
-
-      const response = await fetch("/api/admin/study-programs", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ programs }),
+      const data = await adminApi.updateStudyPrograms({
+        programs: lines
+          .split("\n")
+          .map((line) => line.trim())
+          .filter(Boolean),
       });
 
-      const data = await response.json().catch(() => null);
-      if (!response.ok) {
-        throw new Error(data?.error?.message ?? "Failed to save study programs");
-      }
-
-      setLines((data.programs as StudyProgram[]).map((program) => program.name).join("\n"));
+      setLines(data.programs.map((program) => program.name).join("\n"));
       setSuccess("Study programs updated.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save study programs");

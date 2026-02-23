@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { adminApi } from "@/lib/api/services/admin-client";
+
 export function AdminScholarshipRow({
   scholarship,
 }: {
@@ -25,16 +27,9 @@ export function AdminScholarshipRow({
     setError(null);
 
     try {
-      const response = await fetch(`/api/admin/scholarships/${scholarship.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isPublished: !scholarship.is_published }),
+      await adminApi.updateScholarship(scholarship.id, {
+        isPublished: !scholarship.is_published,
       });
-
-      const data = await response.json().catch(() => null);
-      if (!response.ok) {
-        throw new Error(data?.error?.message ?? "Failed to update scholarship");
-      }
 
       router.refresh();
     } catch (err) {
@@ -56,14 +51,7 @@ export function AdminScholarshipRow({
     setError(null);
 
     try {
-      const response = await fetch(`/api/admin/scholarships/${scholarship.id}`, {
-        method: "DELETE",
-      });
-
-      const data = await response.json().catch(() => null);
-      if (!response.ok) {
-        throw new Error(data?.error?.message ?? "Failed to delete scholarship");
-      }
+      await adminApi.deleteScholarship(scholarship.id);
 
       router.refresh();
     } catch (err) {

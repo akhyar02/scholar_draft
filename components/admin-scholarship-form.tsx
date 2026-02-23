@@ -3,6 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+import type {
+  AdminCreateScholarshipRequest,
+  AdminUpdateScholarshipRequest,
+} from "@/lib/api/contracts";
+import { adminApi } from "@/lib/api/services/admin-client";
 import {
   ALLOWED_SCHOLARSHIP_IMAGE_MIME_TYPES,
   DEFAULT_SCHOLARSHIP_CURRENCY,
@@ -40,6 +45,8 @@ const DEFAULT_FORM_VALUES: AdminScholarshipFormValues = {
   deadlineAt: "",
   isPublished: false,
 };
+
+type ScholarshipImageMimeType = (typeof ALLOWED_SCHOLARSHIP_IMAGE_MIME_TYPES)[number];
 
 function isMalaysianEducationLevel(value: string) {
   return MALAYSIAN_EDUCATION_LEVELS.includes(
@@ -94,21 +101,14 @@ export function AdminScholarshipForm({
         throw new Error("Image exceeds 5MB size limit.");
       }
 
-      const uploadMetaResponse = await fetch("/api/admin/scholarships/upload-url", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          scholarshipId: isEdit ? scholarshipId : undefined,
-          fileName: file.name,
-          mimeType: file.type,
-          sizeBytes: file.size,
-        }),
-      });
+      const mimeType = file.type as ScholarshipImageMimeType;
 
-      const uploadMeta = await uploadMetaResponse.json().catch(() => null);
-      if (!uploadMetaResponse.ok) {
-        throw new Error(uploadMeta?.error?.message ?? "Failed to prepare image upload");
-      }
+      const uploadMeta = await adminApi.createScholarshipUploadUrl({
+        scholarshipId: isEdit ? scholarshipId : undefined,
+        fileName: file.name,
+        mimeType,
+        sizeBytes: file.size,
+      });
 
       const uploadResponse = await fetch(uploadMeta.uploadUrl, {
         method: "PUT",
@@ -140,25 +140,21 @@ export function AdminScholarshipForm({
       }
 
       const normalizedImageKey = form.imageKey.trim();
-      const endpoint = isEdit ? `/api/admin/scholarships/${scholarshipId}` : "/api/admin/scholarships";
-      const method = isEdit ? "PATCH" : "POST";
+      const payload = {
+        ...form,
+        imageKey: isEdit ? (normalizedImageKey || null) : (normalizedImageKey || undefined),
+        amount: Number(form.amount),
+        deadlineAt: new Date(form.deadlineAt).toISOString(),
+      };
 
-      const response = await fetch(endpoint, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          imageKey: isEdit ? (normalizedImageKey || null) : (normalizedImageKey || undefined),
-          amount: Number(form.amount),
-          deadlineAt: new Date(form.deadlineAt).toISOString(),
-        }),
-      });
+      if (isEdit) {
+        if (!scholarshipId) {
+          throw new Error("Scholarship ID is required");
+        }
 
-      const data = await response.json().catch(() => null);
-      if (!response.ok) {
-        throw new Error(
-          data?.error?.message ?? (isEdit ? "Failed to update scholarship" : "Failed to create scholarship"),
-        );
+        await adminApi.updateScholarship(scholarshipId, payload as AdminUpdateScholarshipRequest);
+      } else {
+        await adminApi.createScholarship(payload as AdminCreateScholarshipRequest);
       }
 
       router.push("/admin/scholarships");

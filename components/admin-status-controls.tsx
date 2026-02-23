@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { adminApi } from "@/lib/api/services/admin-client";
 import { APPLICATION_STATUSES, type ApplicationStatus } from "@/lib/constants";
 
 export function AdminStatusControls({
@@ -26,16 +27,7 @@ export function AdminStatusControls({
     setError(null);
 
     try {
-      const response = await fetch(`/api/admin/applications/${applicationId}/status`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ toStatus, reason, adminNotes }),
-      });
-
-      const data = await response.json().catch(() => null);
-      if (!response.ok) {
-        throw new Error(data?.error?.message ?? "Failed to update status");
-      }
+      await adminApi.updateApplicationStatus(applicationId, { toStatus, reason, adminNotes });
 
       router.refresh();
     } catch (err) {
@@ -50,16 +42,9 @@ export function AdminStatusControls({
     setError(null);
 
     try {
-      const response = await fetch(`/api/admin/applications/${applicationId}/reopen`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reason: reason || "Reopened by admin" }),
+      await adminApi.reopenApplication(applicationId, {
+        reason: reason || "Reopened by admin",
       });
-
-      const data = await response.json().catch(() => null);
-      if (!response.ok) {
-        throw new Error(data?.error?.message ?? "Failed to reopen application");
-      }
 
       router.refresh();
     } catch (err) {
