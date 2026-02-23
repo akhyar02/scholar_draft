@@ -39,7 +39,23 @@ export const scholarshipBaseSchema = z.object({
 });
 
 export const scholarshipCreateSchema = scholarshipBaseSchema;
-export const scholarshipPatchSchema = scholarshipBaseSchema.partial();
+export const scholarshipPatchSchema = z.object({
+  title: z.string().min(4).max(200).optional(),
+  description: z.string().min(10).optional(),
+  imageKey: z.string().min(5).max(2048).nullish().optional(),
+  amount: z.number().positive().optional(),
+  currency: z.literal(DEFAULT_SCHOLARSHIP_CURRENCY).optional(),
+  educationLevel: z.enum(MALAYSIAN_EDUCATION_LEVELS).optional(),
+  eligibilityText: z.string().min(10).optional(),
+  deadlineAt: z.string().datetime().optional(),
+  isPublished: z.boolean().default(false).optional(),
+  slug: z
+    .string()
+    .min(3)
+    .max(220)
+    .regex(/^[a-z0-9-]+$/)
+    .optional(),
+});
 
 export const scholarshipImageUploadSchema = z.object({
   scholarshipId: z.string().uuid().optional(),
@@ -224,8 +240,36 @@ export const applicationFormV2Schema = z.object({
 });
 
 const updateFamilyInfoSchema = z.object({
-  fatherGuardian: fatherGuardianSchema.partial().optional(),
-  motherGuardian: motherGuardianSchema.partial().optional(),
+  fatherGuardian: z.object({
+    name: z.string().trim().min(2).max(200).optional(),
+    identificationType: z.enum(IDENTIFICATION_TYPES).optional(),
+    identificationNumber: z.string().trim().min(3).max(60).optional(),
+    age: z.number().int().min(18).max(120).optional(),
+    address: z.string().trim().min(5).max(1000).optional(),
+    contactNo: z
+      .string()
+      .transform((value) => normalizePhoneNumber(value))
+      .refine((value) => INTERNATIONAL_PHONE_REGEX.test(value), {
+        message: "Contact number must be in international format (e.g. +60123456789)",
+      }).optional(),
+    monthlySalary: z.number().min(0).max(10_000_000).optional(),
+    relationship: z.enum(FATHER_GUARDIAN_RELATIONSHIPS).optional(),
+  }).optional(),
+  motherGuardian: z.object({
+    name: z.string().trim().min(2).max(200).optional(),
+    identificationType: z.enum(IDENTIFICATION_TYPES).optional(),
+    identificationNumber: z.string().trim().min(3).max(60).optional(),
+    age: z.number().int().min(18).max(120).optional(),
+    address: z.string().trim().min(5).max(1000).optional(),
+    contactNo: z
+      .string()
+      .transform((value) => normalizePhoneNumber(value))
+      .refine((value) => INTERNATIONAL_PHONE_REGEX.test(value), {
+        message: "Contact number must be in international format (e.g. +60123456789)",
+      }).optional(),
+    monthlySalary: z.number().min(0).max(10_000_000).optional(),
+    relationship: z.enum(MOTHER_GUARDIAN_RELATIONSHIPS).optional(),
+  }).optional(),
   siblings: z
     .object({
       above18Working: z.array(siblingWorkingMemberSchema).optional(),
@@ -254,7 +298,29 @@ const updateFinancialDeclarationSchema = z.object({
 export const updateDraftV2Schema = z.object({
   payload: z.object({
     schemaVersion: z.literal(2).optional(),
-    personalInfo: personalInfoSchema.partial().optional(),
+    personalInfo: z.object({
+      fullName: z.string().trim().min(2).max(120).optional(),
+      studentId: z.string().trim().min(3).max(60).optional(),
+      campusOptionId: z.string().uuid().optional(),
+      idType: z.enum(IDENTIFICATION_TYPES).optional(),
+      idNumber: z.string().trim().min(3).max(60).optional(),
+      address: z.string().trim().min(5).max(1000).optional(),
+      gender: z.enum(GENDERS).optional(),
+      religion: z.enum(RELIGIONS).optional(),
+      nationality: z.enum(NATIONALITIES).optional(),
+      countryCode: z.string().regex(COUNTRY_CODE_REGEX).nullable().optional(),
+      facultyOptionId: z.string().uuid().optional(),
+      courseOptionId: z.string().uuid().optional(),
+      currentTrimester: z.string().trim().min(1).max(30).optional(),
+      studyDurationYears: z.number().min(0.5).max(20).optional(),
+      mobileNumber: z
+        .string()
+        .transform((value) => normalizePhoneNumber(value))
+        .refine((value) => INTERNATIONAL_PHONE_REGEX.test(value), {
+          message: "Phone number must be in international format (e.g. +60123456789)",
+        }).optional(),
+      email: z.string().email().toLowerCase().optional(),
+    }).optional(),
     familyInfo: updateFamilyInfoSchema.optional(),
     financialDeclaration: updateFinancialDeclarationSchema.optional(),
   }),
