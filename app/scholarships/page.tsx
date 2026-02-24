@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Calendar, GraduationCap, Banknote, ArrowRight, Sparkles } from "lucide-react";
 
@@ -6,6 +7,26 @@ import { resolveStoredObjectUrl } from "@/lib/s3-object-url";
 import { formatScholarshipEducationLevel } from "@/lib/scholarships";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Available Scholarships",
+  description:
+    "Browse available YUM scholarships and explore funding opportunities for your educational journey.",
+  alternates: {
+    canonical: "/scholarships",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  openGraph: {
+    title: "Available Scholarships",
+    description:
+      "Browse available YUM scholarships and explore funding opportunities for your educational journey.",
+    url: "/scholarships",
+    type: "website",
+  },
+};
 
 export default async function ScholarshipsPage() {
   const db = getDb();

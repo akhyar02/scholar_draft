@@ -7,14 +7,33 @@ import { getSessionUser } from "@/lib/auth/session";
 import { NavLink } from "@/components/nav-link";
 import { LogoutButton } from "@/components/logout-button";
 import { MobileNav } from "@/components/mobile-nav";
+import { getSiteUrlObject } from "@/lib/site-url";
 
 import "./globals.css";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "YUM Scholarship Portal",
+  metadataBase: getSiteUrlObject(),
+  title: {
+    default: "YUM Scholarship Portal",
+    template: "%s | YUM Scholarship Portal",
+  },
   description: "YUM Scholarship application and review platform",
+  alternates: {
+    canonical: "/",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  openGraph: {
+    type: "website",
+    siteName: "YUM Scholarship Portal",
+    title: "YUM Scholarship Portal",
+    description: "YUM Scholarship application and review platform",
+    url: "/",
+  },
 };
 
 const poppins = Poppins({

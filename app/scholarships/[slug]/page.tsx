@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import {
   Calendar,
@@ -18,20 +19,75 @@ import { formatScholarshipEducationLevel } from "@/lib/scholarships";
 
 export const dynamic = "force-dynamic";
 
-export default async function ScholarshipDetailPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
-  const { slug } = await params;
-  const db = getDb();
+type ScholarshipRouteParams = Promise<{ slug: string }>;
 
-  const scholarship = await db
+function buildScholarshipDescription(description: string) {
+  const normalized = description.replace(/\s+/g, " ").trim();
+
+  if (normalized.length <= 160) {
+    return normalized;
+  }
+
+  return `${normalized.slice(0, 157).trimEnd()}...`;
+}
+
+async function getPublishedScholarshipBySlug(slug: string) {
+  return getDb()
     .selectFrom("scholarships")
     .selectAll()
     .where("slug", "=", slug)
     .where("is_published", "=", true)
     .executeTakeFirst();
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: ScholarshipRouteParams;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const scholarship = await getPublishedScholarshipBySlug(slug);
+
+  if (!scholarship) {
+    return {
+      title: "Scholarship Not Found",
+      robots: {
+        index: false,
+        follow: false,
+      },
+    };
+  }
+
+  const description = buildScholarshipDescription(scholarship.description);
+  const canonicalPath = `/scholarships/${scholarship.slug}`;
+
+  return {
+    title: scholarship.title,
+    description,
+    alternates: {
+      canonical: canonicalPath,
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
+    openGraph: {
+      title: scholarship.title,
+      description,
+      url: canonicalPath,
+      type: "website",
+    },
+  };
+}
+
+export default async function ScholarshipDetailPage({
+  params,
+}: {
+  params: ScholarshipRouteParams;
+}) {
+  const { slug } = await params;
+  const db = getDb();
+  const scholarship = await getPublishedScholarshipBySlug(slug);
 
   if (!scholarship) {
     notFound();
