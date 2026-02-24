@@ -8,7 +8,7 @@ export function LogoutButton() {
     <button
       type="button"
       onClick={() => signOut({ callbackUrl: "/" })}
-      className="inline-flex bg-accent-600 items-center gap-2 rounded-md px-4 py-2 text-sm font-medium text-surface-50 hover:bg-accent-900 transition-colors"
+      className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2 text-sm font-medium text-white/90 ring-1 ring-white/10 hover:bg-white/20 hover:ring-white/20 transition-all duration-200"
     >
       <LogOut className="h-4 w-4" />
       Sign out

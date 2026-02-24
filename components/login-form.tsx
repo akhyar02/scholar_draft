@@ -50,18 +50,19 @@ export function LoginForm() {
   return (
     <form onSubmit={onSubmit} className="space-y-5">
       {error ? (
-        <div className="rounded-lg bg-danger-50 p-3 text-sm text-danger-600 ring-1 ring-danger-200">
+        <div className="rounded-xl bg-danger-50 p-4 text-sm text-danger-600 ring-1 ring-danger-200/60 flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-danger-500 shrink-0" />
           {error}
         </div>
       ) : null}
       
-      <div className="space-y-1">
-        <label className="text-sm font-medium text-surface-700" htmlFor="email">
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium text-surface-600" htmlFor="email">
           Email Address
         </label>
         <input
           id="email"
-          className="w-full rounded-xl border-0 bg-surface-50 px-4 py-3 text-surface-900 shadow-sm ring-1 ring-inset ring-surface-200 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6 transition-all"
+          className="w-full rounded-xl border-0 bg-surface-50/80 px-4 py-3.5 text-surface-900 shadow-sm ring-1 ring-inset ring-surface-200 placeholder:text-surface-400 focus:ring-2 focus:ring-inset focus:ring-primary-500 focus:bg-white sm:text-sm sm:leading-6 transition-all duration-200"
           type="email"
           placeholder="admin@example.com"
           value={email}
@@ -70,13 +71,13 @@ export function LoginForm() {
         />
       </div>
       
-      <div className="space-y-1">
-        <label className="text-sm font-medium text-surface-700" htmlFor="password">
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium text-surface-600" htmlFor="password">
           Password
         </label>
         <input
           id="password"
-          className="w-full rounded-xl border-0 bg-surface-50 px-4 py-3 text-surface-900 shadow-sm ring-1 ring-inset ring-surface-200 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6 transition-all"
+          className="w-full rounded-xl border-0 bg-surface-50/80 px-4 py-3.5 text-surface-900 shadow-sm ring-1 ring-inset ring-surface-200 placeholder:text-surface-400 focus:ring-2 focus:ring-inset focus:ring-primary-500 focus:bg-white sm:text-sm sm:leading-6 transition-all duration-200"
           type="password"
           placeholder="••••••••"
           value={password}
@@ -86,7 +87,7 @@ export function LoginForm() {
       </div>
       
       <button 
-        className="mt-6 w-full rounded-xl bg-primary-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 disabled:opacity-50 transition-colors" 
+        className="mt-6 btn-gradient w-full rounded-xl px-4 py-3.5 text-sm font-semibold text-white shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 disabled:opacity-50 disabled:cursor-not-allowed" 
         disabled={loading}
       >
         {loading ? "Signing in..." : "Sign in"}

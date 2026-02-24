@@ -2,8 +2,37 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { LogoutButton } from "./logout-button";
+
+function MobileNavLink({
+  href,
+  children,
+  onClick,
+}: {
+  href: string;
+  children: React.ReactNode;
+  onClick: () => void;
+}) {
+  const pathname = usePathname();
+  const isActive =
+    pathname === href || (href !== "/" && pathname.startsWith(href));
+
+  return (
+    <Link
+      href={href}
+      className={`rounded-xl px-4 py-3 transition-all text-lg font-medium ${
+        isActive
+          ? "text-white bg-white/20 font-semibold"
+          : "text-white/80 hover:text-white hover:bg-white/10"
+      }`}
+      onClick={onClick}
+    >
+      {children}
+    </Link>
+  );
+}
 
 export function MobileNav({ user }: { user: any }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -14,70 +43,46 @@ export function MobileNav({ user }: { user: any }) {
     <div className="md:hidden flex items-center">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="text-surface-50 hover:text-surface-300 focus:outline-none"
+        className="text-white/80 hover:text-white focus:outline-none transition-colors p-1"
         aria-label="Toggle menu"
       >
         {isOpen ? <X size={24} /> : <Menu size={24} />}
       </button>
 
       {isOpen && (
-        <div className="absolute top-20 left-0 w-full bg-primary-600 border-b border-primary-500 shadow-lg z-40 flex flex-col py-4 px-6 gap-4">
-          <Link
-            href="/scholarships"
-            className="text-surface-50 hover:text-surface-300 transition-colors text-lg font-medium"
-            onClick={closeMenu}
-          >
+        <div className="absolute top-20 left-0 w-full bg-primary-800 border-b border-primary-900/50 shadow-2xl z-40 flex flex-col py-6 px-6 gap-1">
+          <MobileNavLink href="/scholarships" onClick={closeMenu}>
             Scholarships
-          </Link>
+          </MobileNavLink>
           {user?.role === "student" ? (
             <>
-              <Link
-                href="/student/dashboard"
-                className="text-surface-50 hover:text-surface-300 transition-colors text-lg font-medium"
-                onClick={closeMenu}
-              >
+              <MobileNavLink href="/student/dashboard" onClick={closeMenu}>
                 Dashboard
-              </Link>
-              <Link
-                href="/student/applications"
-                className="text-surface-50 hover:text-surface-300 transition-colors text-lg font-medium"
-                onClick={closeMenu}
-              >
+              </MobileNavLink>
+              <MobileNavLink href="/student/applications" onClick={closeMenu}>
                 My Applications
-              </Link>
+              </MobileNavLink>
             </>
           ) : null}
           {user?.role === "admin" ? (
             <>
-              <Link
-                href="/admin/dashboard"
-                className="text-surface-50 hover:text-surface-300 transition-colors text-lg font-medium"
-                onClick={closeMenu}
-              >
+              <MobileNavLink href="/admin/dashboard" onClick={closeMenu}>
                 Dashboard
-              </Link>
-              <Link
-                href="/admin/applications"
-                className="text-surface-50 hover:text-surface-300 transition-colors text-lg font-medium"
-                onClick={closeMenu}
-              >
+              </MobileNavLink>
+              <MobileNavLink href="/admin/applications" onClick={closeMenu}>
                 Review Queue
-              </Link>
-              <Link
-                href="/admin/programs"
-                className="text-surface-50 hover:text-surface-300 transition-colors text-lg font-medium"
-                onClick={closeMenu}
-              >
+              </MobileNavLink>
+              <MobileNavLink href="/admin/programs" onClick={closeMenu}>
                 Application Options
-              </Link>
+              </MobileNavLink>
             </>
           ) : null}
           {user ? (
-            <div className="pt-4 border-t border-primary-500 flex flex-col gap-4">
-              <span className="text-sm font-medium text-surface-200">
+            <div className="mt-4 pt-4 border-t border-white/10 flex flex-col gap-4">
+              <span className="text-sm font-medium text-white/60 px-4">
                 {user.email}
               </span>
-              <div onClick={closeMenu}>
+              <div onClick={closeMenu} className="px-4">
                 <LogoutButton />
               </div>
             </div>

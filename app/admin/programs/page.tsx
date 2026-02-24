@@ -16,7 +16,7 @@ export default async function AdminProgramsPage() {
           Configure campus, faculty, course, and support provider options used in V2 applications.
         </p>
       </div>
-      <div className="rounded-lg bg-white p-8 shadow-sm ring-1 ring-surface-200">
+      <div className="rounded-2xl bg-white/80 backdrop-blur-sm p-8 shadow-sm ring-1 ring-surface-200/60">
         <AdminApplicationOptionsManager initialOptions={options} />
       </div>
     </div>

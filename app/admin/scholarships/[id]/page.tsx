@@ -59,7 +59,7 @@ export default async function EditScholarshipPage({
           <p className="mt-2 text-surface-600">Update scholarship details and publish settings.</p>
         </div>
       </div>
-      <div className="rounded-lg bg-white p-8 shadow-sm ring-1 ring-surface-200">
+      <div className="rounded-2xl bg-white/80 backdrop-blur-sm p-8 shadow-sm ring-1 ring-surface-200/60">
         <AdminScholarshipForm
           mode="edit"
           scholarshipId={scholarship.id}

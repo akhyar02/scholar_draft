@@ -100,7 +100,7 @@ export default async function StudentApplicationDetailPage({
           initialAttachments={attachments}
         />
       ) : (
-        <section className="rounded-lg bg-white p-6 ring-1 ring-surface-200 space-y-4">
+        <section className="rounded-2xl bg-white/80 backdrop-blur-sm p-6 ring-1 ring-surface-200/60 space-y-4">
           <h2 className="text-xl font-semibold text-surface-900">Legacy Application Data</h2>
           <p className="text-sm text-surface-600">
             This application was submitted using the previous schema and is displayed in read-only mode.
@@ -116,7 +116,7 @@ export default async function StudentApplicationDetailPage({
             ) : (
               <div className="grid gap-3 md:grid-cols-2">
                 {legacyDocuments.map((doc) => (
-                  <div key={doc.id} className="rounded-lg bg-surface-50 p-3 ring-1 ring-surface-200">
+                  <div key={doc.id} className="rounded-xl bg-surface-50 p-3 ring-1 ring-surface-200">
                     <p className="text-sm font-medium text-surface-800">{doc.doc_type}</p>
                     <p className="text-xs text-surface-600 truncate" title={doc.original_filename}>{doc.original_filename}</p>
                   </div>

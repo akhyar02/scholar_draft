@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { AdminStatusControls } from "@/components/admin-status-controls";
 import { StatusBadge } from "@/components/status-badge";
 import { isApplicationFormV2 } from "@/lib/application-v2";
+import { listApplicationOptionsTree } from "@/lib/application-options";
 import { getDb } from "@/lib/db";
 import type { ApplicationFormPayloadV2 } from "@/lib/db/types";
 import { requirePageUser } from "@/lib/page-auth";
@@ -95,7 +96,7 @@ export default async function AdminApplicationDetailPage({
     notFound();
   }
 
-  const [formData, attachments, legacyDocuments, history] = await Promise.all([
+  const [formData, attachments, legacyDocuments, history, applicationOptions] = await Promise.all([
     db
       .selectFrom("application_form_data")
       .select("payload")
@@ -119,10 +120,14 @@ export default async function AdminApplicationDetailPage({
       .where("application_id", "=", id)
       .orderBy("changed_at", "desc")
       .execute(),
+    listApplicationOptionsTree(db),
   ]);
 
   const payload = formData?.payload ?? {};
   const isV2 = isApplicationFormV2(payload);
+  const supportProviderLabelById = new Map(
+    applicationOptions.supportProviders.map((provider) => [provider.id, provider.label]),
+  );
 
   const attachmentsWithLinks = await Promise.all(
     attachments.map(async (file) => {
@@ -168,6 +173,11 @@ export default async function AdminApplicationDetailPage({
   );
 
   const v2Form = isV2 ? (payload as ApplicationFormPayloadV2) : null;
+  const selectedSupportProviderNames = v2Form
+    ? v2Form.financialDeclaration.supportProviderOptionIds.map(
+        (providerId) => supportProviderLabelById.get(providerId) ?? providerId,
+      )
+    : [];
 
   return (
     <div className="space-y-8">
@@ -178,7 +188,7 @@ export default async function AdminApplicationDetailPage({
 
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="space-y-8 lg:col-span-2">
-          <section className="rounded-lg bg-white p-8 shadow-sm ring-1 ring-surface-200">
+          <section className="rounded-2xl bg-white/80 backdrop-blur-sm p-8 shadow-sm ring-1 ring-surface-200/60">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-bold text-surface-900">{application.scholarship_title}</h2>
@@ -212,7 +222,7 @@ export default async function AdminApplicationDetailPage({
 
           {v2Form ? (
             <>
-              <section className="rounded-lg bg-white p-8 shadow-sm ring-1 ring-surface-200">
+              <section className="rounded-2xl bg-white/80 backdrop-blur-sm p-8 shadow-sm ring-1 ring-surface-200/60">
                 <h2 className="text-xl font-bold text-surface-900">Personal Info</h2>
                 <div className="mt-6 grid gap-4 sm:grid-cols-2">
                   <div className="rounded-xl bg-surface-50 p-4 ring-1 ring-surface-200"><p className="text-xs uppercase text-surface-500">Full Name</p><p className="mt-1 text-sm text-surface-900">{v2Form.personalInfo.fullName}</p></div>
@@ -231,7 +241,7 @@ export default async function AdminApplicationDetailPage({
                 </div>
               </section>
 
-              <section className="rounded-lg bg-white p-8 shadow-sm ring-1 ring-surface-200">
+              <section className="rounded-2xl bg-white/80 backdrop-blur-sm p-8 shadow-sm ring-1 ring-surface-200/60">
                 <h2 className="text-xl font-bold text-surface-900">Family Info</h2>
                 <div className="mt-6 grid gap-4 sm:grid-cols-2">
                   <div className="rounded-xl bg-surface-50 p-4 ring-1 ring-surface-200 space-y-1">
@@ -274,7 +284,7 @@ export default async function AdminApplicationDetailPage({
                 </div>
               </section>
 
-              <section className="rounded-lg bg-white p-8 shadow-sm ring-1 ring-surface-200">
+              <section className="rounded-2xl bg-white/80 backdrop-blur-sm p-8 shadow-sm ring-1 ring-surface-200/60">
                 <h2 className="text-xl font-bold text-surface-900">Financial Declaration</h2>
                 <div className="mt-6 grid gap-4 sm:grid-cols-2">
                   <div className="rounded-xl bg-surface-50 p-4 ring-1 ring-surface-200"><p className="text-xs uppercase text-surface-500">Bank Name</p><p className="mt-1 text-sm text-surface-900">{v2Form.financialDeclaration.bankName}</p></div>
@@ -282,16 +292,16 @@ export default async function AdminApplicationDetailPage({
                   <div className="rounded-xl bg-surface-50 p-4 ring-1 ring-surface-200"><p className="text-xs uppercase text-surface-500">Receiving Other Support</p><p className="mt-1 text-sm text-surface-900">{v2Form.financialDeclaration.receivingOtherSupport ? "Yes" : "No"}</p></div>
                   <div className="rounded-xl bg-surface-50 p-4 ring-1 ring-surface-200"><p className="text-xs uppercase text-surface-500">MMU Outstanding Invoice</p><p className="mt-1 text-sm text-surface-900">MYR {v2Form.financialDeclaration.mmuOutstandingInvoiceAmount.toLocaleString()}</p></div>
                 </div>
-                {v2Form.financialDeclaration.supportProviderOptionIds.length > 0 ? (
+                {selectedSupportProviderNames.length > 0 ? (
                   <div className="mt-4 rounded-xl bg-surface-50 p-4 ring-1 ring-surface-200">
-                    <p className="text-xs uppercase text-surface-500">Support Provider IDs</p>
-                    <p className="mt-1 text-sm text-surface-900 break-all">{v2Form.financialDeclaration.supportProviderOptionIds.join(", ")}</p>
+                    <p className="text-xs uppercase text-surface-500">Support Providers</p>
+                    <p className="mt-1 text-sm text-surface-900 break-all">{selectedSupportProviderNames.join(", ")}</p>
                   </div>
                 ) : null}
               </section>
             </>
           ) : (
-            <section className="rounded-lg bg-white p-8 shadow-sm ring-1 ring-surface-200">
+            <section className="rounded-2xl bg-white/80 backdrop-blur-sm p-8 shadow-sm ring-1 ring-surface-200/60">
               <h2 className="text-xl font-bold text-surface-900">Legacy Application Form Data</h2>
               <pre className="mt-6 overflow-auto rounded-xl bg-surface-900 p-4 text-xs text-surface-200">
                 {JSON.stringify(payload, null, 2)}
@@ -299,7 +309,7 @@ export default async function AdminApplicationDetailPage({
             </section>
           )}
 
-          <section className="rounded-lg bg-white p-8 shadow-sm ring-1 ring-surface-200">
+          <section className="rounded-2xl bg-white/80 backdrop-blur-sm p-8 shadow-sm ring-1 ring-surface-200/60">
             <h2 className="text-xl font-bold text-surface-900">Documents</h2>
             {isV2 ? (
               attachmentsWithLinks.length === 0 ? (
@@ -321,8 +331,8 @@ export default async function AdminApplicationDetailPage({
                               <p className="mt-1 text-xs text-surface-500">Uploaded {new Date(file.uploaded_at).toLocaleString()}</p>
                               <p className="mt-2 text-xs text-surface-400 break-all">Slot: {file.slot_key}</p>
                               <div className="mt-4 flex gap-3">
-                                {file.viewUrl ? <a href={file.viewUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center rounded-lg bg-white px-3 py-2 text-xs font-semibold text-surface-700 ring-1 ring-surface-300 hover:bg-surface-100">View</a> : null}
-                                {file.downloadUrl || file.viewUrl ? <a href={file.downloadUrl ?? file.viewUrl ?? undefined} target="_blank" rel="noreferrer" download={file.original_filename} className="inline-flex items-center justify-center rounded-lg bg-primary-600 px-3 py-2 text-xs font-semibold text-white hover:bg-primary-500">Download</a> : null}
+                                {file.viewUrl ? <a href={file.viewUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center rounded-xl bg-white px-3 py-2 text-xs font-semibold text-surface-700 ring-1 ring-surface-300 hover:bg-surface-100">View</a> : null}
+                                {file.downloadUrl || file.viewUrl ? <a href={file.downloadUrl ?? file.viewUrl ?? undefined} target="_blank" rel="noreferrer" download={file.original_filename} className="inline-flex items-center justify-center rounded-xl bg-primary-600 px-3 py-2 text-xs font-semibold text-white hover:bg-primary-500">Download</a> : null}
                               </div>
                             </div>
                           ))}
@@ -342,8 +352,8 @@ export default async function AdminApplicationDetailPage({
                     <p className="mt-1 text-sm text-surface-600 truncate" title={doc.original_filename}>{doc.original_filename}</p>
                     <p className="mt-2 text-xs text-surface-500">{doc.mime_type} • {formatBytes(doc.size_bytes)}</p>
                     <div className="mt-4 flex gap-3">
-                      {doc.viewUrl ? <a href={doc.viewUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center rounded-lg bg-white px-3 py-2 text-xs font-semibold text-surface-700 ring-1 ring-surface-300 hover:bg-surface-100">View</a> : null}
-                      {doc.downloadUrl || doc.viewUrl ? <a href={doc.downloadUrl ?? doc.viewUrl ?? undefined} target="_blank" rel="noreferrer" download={doc.original_filename} className="inline-flex items-center justify-center rounded-lg bg-primary-600 px-3 py-2 text-xs font-semibold text-white hover:bg-primary-500">Download</a> : null}
+                      {doc.viewUrl ? <a href={doc.viewUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center rounded-xl bg-white px-3 py-2 text-xs font-semibold text-surface-700 ring-1 ring-surface-300 hover:bg-surface-100">View</a> : null}
+                      {doc.downloadUrl || doc.viewUrl ? <a href={doc.downloadUrl ?? doc.viewUrl ?? undefined} target="_blank" rel="noreferrer" download={doc.original_filename} className="inline-flex items-center justify-center rounded-xl bg-primary-600 px-3 py-2 text-xs font-semibold text-white hover:bg-primary-500">Download</a> : null}
                     </div>
                   </div>
                 ))}
@@ -351,7 +361,7 @@ export default async function AdminApplicationDetailPage({
             )}
           </section>
 
-          <section className="rounded-lg bg-white p-8 shadow-sm ring-1 ring-surface-200">
+          <section className="rounded-2xl bg-white/80 backdrop-blur-sm p-8 shadow-sm ring-1 ring-surface-200/60">
             <h2 className="text-xl font-bold text-surface-900">Admin Notes</h2>
             {application.admin_notes ? (
               <p className="mt-6 whitespace-pre-wrap rounded-xl bg-surface-50 p-4 text-sm leading-relaxed text-surface-800 ring-1 ring-surface-200">
@@ -364,12 +374,12 @@ export default async function AdminApplicationDetailPage({
             )}
           </section>
 
-          <section className="rounded-lg bg-white p-8 shadow-sm ring-1 ring-surface-200">
+          <section className="rounded-2xl bg-white/80 backdrop-blur-sm p-8 shadow-sm ring-1 ring-surface-200/60">
             <h2 className="text-xl font-bold text-surface-900">Status History</h2>
             <div className="mt-6 space-y-4">
               {history.map((entry) => (
                 <div key={entry.id} className="flex items-start gap-4 rounded-xl bg-surface-50 p-4 ring-1 ring-surface-200">
-                  <div className="mt-1 h-2 w-2 shrink-0 rounded-md bg-primary-500" />
+                  <div className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary-500" />
                   <div>
                     <p className="text-sm font-medium text-surface-900">
                       {entry.from_status ?? "none"} <span className="text-surface-400 mx-1">→</span> {entry.to_status}

@@ -55,13 +55,13 @@ export function AdminStatusControls({
   }
 
   return (
-    <div className="space-y-5 rounded-lg bg-white p-6 shadow-sm ring-1 ring-surface-200">
+    <div className="space-y-5 rounded-2xl bg-white/80 backdrop-blur-sm p-6 shadow-sm ring-1 ring-surface-200/60">
       <h3 className="text-lg font-bold text-surface-900">Review Controls</h3>
 
       <div className="space-y-1">
         <label className="text-sm font-medium text-surface-700">Transition To</label>
         <select
-          className="w-full rounded-xl border-0 bg-surface-50 px-4 py-3 text-surface-900 shadow-sm ring-1 ring-inset ring-surface-200 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6 transition-all"
+          className="ui-select w-full rounded-xl border-0 bg-surface-50 pl-4 py-2.5 text-sm text-surface-900 ring-1 ring-surface-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:text-surface-400"
           value={toStatus}
           onChange={(event) => setToStatus(event.target.value as ApplicationStatus)}
         >
@@ -115,7 +115,7 @@ export function AdminStatusControls({
       </div>
 
       {error ? (
-        <div className="rounded-lg bg-danger-50 p-3 text-sm text-danger-700 ring-1 ring-danger-200">
+        <div className="rounded-xl bg-danger-50/80 p-3 text-sm text-danger-700 ring-1 ring-danger-100">
           {error}
         </div>
       ) : null}

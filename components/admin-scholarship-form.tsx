@@ -63,7 +63,7 @@ export function AdminScholarshipForm({
   const router = useRouter();
   const isEdit = mode === "edit";
   const [loading, setLoading] = useState(false);
-  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(initialImagePreviewUrl);
   const [error, setError] = useState<string | null>(null);
@@ -209,7 +209,7 @@ export function AdminScholarshipForm({
                   setForm((prev) => ({ ...prev, imageKey: "" }));
                   setImagePreviewUrl(null);
                 }}
-                className="rounded-md bg-white px-3 py-1 text-xs font-semibold text-surface-700 ring-1 ring-surface-300 hover:bg-surface-100"
+                className="rounded-xl bg-white px-3 py-1.5 text-xs font-semibold text-surface-700 ring-1 ring-surface-200 hover:bg-surface-100 transition-all"
               >
                 Remove
               </button>
@@ -219,15 +219,15 @@ export function AdminScholarshipForm({
             <img
               src={imagePreviewUrl}
               alt="Scholarship preview"
-              className="mb-3 h-40 w-full rounded-lg object-cover ring-1 ring-surface-200"
+              className="mb-3 h-40 w-full rounded-xl object-cover ring-1 ring-surface-200"
             />
           ) : (
-            <div className="mb-3 flex h-28 items-center justify-center rounded-lg border border-dashed border-surface-300 bg-white text-xs text-surface-500">
+            <div className="mb-3 flex h-28 items-center justify-center rounded-xl border border-dashed border-surface-300 bg-white text-xs text-surface-500">
               No image uploaded
             </div>
           )}
           <input
-            className="block w-full text-sm text-surface-500 file:mr-4 file:rounded-md file:border-0 file:bg-primary-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-primary-700 hover:file:bg-primary-100 transition-all"
+            className="block w-full text-sm text-surface-500 file:mr-4 file:rounded-xl file:border-0 file:bg-primary-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-primary-700 hover:file:bg-primary-100 transition-all"
             type="file"
             accept=".jpg,.jpeg,.png,.webp"
             disabled={uploadingImage}
@@ -269,7 +269,7 @@ export function AdminScholarshipForm({
         <div className="space-y-1">
           <label className="text-sm font-medium text-surface-700">Education Level (Optional)</label>
           <select
-            className="w-full rounded-xl border-0 bg-surface-50 px-4 py-3 text-surface-900 shadow-sm ring-1 ring-inset ring-surface-200 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6 transition-all"
+            className="ui-select w-full rounded-xl border-0 bg-surface-50 pl-4 py-2.5 text-sm text-surface-900 ring-1 ring-surface-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:text-surface-400"
             value={form.educationLevel}
             onChange={(event) => setForm((prev) => ({ ...prev, educationLevel: event.target.value }))}
           >
@@ -343,7 +343,7 @@ export function AdminScholarshipForm({
       </div>
 
       {error ? (
-        <div className="rounded-lg bg-danger-50 p-4 text-sm text-danger-700 ring-1 ring-danger-200">
+        <div className="rounded-xl bg-danger-50/80 p-4 text-sm text-danger-700 ring-1 ring-danger-100">
           {error}
         </div>
       ) : null}

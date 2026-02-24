@@ -414,12 +414,12 @@ export function AdminApplicationOptionsManager({
       </div>
 
       <div className="space-y-1">
-        <label className="text-sm font-medium text-surface-700">Faculty Mapping (one per line)</label>
+        <label className="text-sm font-medium text-surface-700">Faculty Mapping</label>
         <div className="rounded-xl bg-surface-50 p-3 ring-1 ring-inset ring-surface-200">
           <p className="mb-2 text-xs font-medium text-surface-600">Quick add faculty</p>
           <div className="grid gap-2 sm:grid-cols-[1fr_1.2fr_auto]">
             <select
-              className="rounded-lg border-0 bg-white px-3 py-2 text-sm text-surface-900 shadow-sm ring-1 ring-inset ring-surface-200 focus:ring-2 focus:ring-primary-600"
+              className="ui-select w-full rounded-xl border-0 bg-surface-50 pl-4 py-2.5 text-sm text-surface-900 ring-1 ring-surface-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:text-surface-400"
               value={facultyCampusDraft}
               onChange={(event) => setFacultyCampusDraft(event.target.value)}
               disabled={campusLabels.length === 0}
@@ -435,7 +435,7 @@ export function AdminApplicationOptionsManager({
             </select>
             <input
               type="text"
-              className="rounded-lg border-0 bg-white px-3 py-2 text-sm text-surface-900 shadow-sm ring-1 ring-inset ring-surface-200 focus:ring-2 focus:ring-primary-600"
+              className="rounded-xl border-0 bg-white px-3 py-2 text-sm text-surface-900 shadow-sm ring-1 ring-inset ring-surface-200 focus:ring-2 focus:ring-primary-600"
               value={facultyLabelDraft}
               onChange={(event) => setFacultyLabelDraft(event.target.value)}
               placeholder="e.g. FCI"
@@ -443,7 +443,7 @@ export function AdminApplicationOptionsManager({
             <button
               type="button"
               onClick={addFacultyMapping}
-              className="rounded-lg bg-surface-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+              className="rounded-xl bg-surface-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
               disabled={campusLabels.length === 0}
             >
               Add
@@ -455,7 +455,7 @@ export function AdminApplicationOptionsManager({
               {campusLabels.map((campus) => {
                 const faculties = facultiesByCampus.get(campus.toLowerCase()) ?? [];
                 return (
-                  <div key={campus} className="rounded-lg bg-white p-2 ring-1 ring-inset ring-surface-200">
+                  <div key={campus} className="rounded-xl bg-white p-2 ring-1 ring-inset ring-surface-200">
                     <p className="text-xs font-semibold text-surface-600">{campus}</p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {faculties.length === 0 ? (
@@ -483,12 +483,12 @@ export function AdminApplicationOptionsManager({
       </div>
 
       <div className="space-y-1">
-        <label className="text-sm font-medium text-surface-700">Course Mapping (one per line)</label>
+        <label className="text-sm font-medium text-surface-700">Course Mapping</label>
         <div className="rounded-xl bg-surface-50 p-3 ring-1 ring-inset ring-surface-200">
           <p className="mb-2 text-xs font-medium text-surface-600">Quick add course</p>
           <div className="grid gap-2 sm:grid-cols-[1fr_1fr_1.2fr_auto]">
             <select
-              className="rounded-lg border-0 bg-white px-3 py-2 text-sm text-surface-900 shadow-sm ring-1 ring-inset ring-surface-200 focus:ring-2 focus:ring-primary-600"
+              className="ui-select w-full rounded-xl border-0 bg-surface-50 pl-4 py-2.5 text-sm text-surface-900 ring-1 ring-surface-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:text-surface-400"
               value={courseCampusDraft}
               onChange={(event) => setCourseCampusDraft(event.target.value)}
               disabled={campusLabels.length === 0}
@@ -503,7 +503,7 @@ export function AdminApplicationOptionsManager({
               ))}
             </select>
             <select
-              className="rounded-lg border-0 bg-white px-3 py-2 text-sm text-surface-900 shadow-sm ring-1 ring-inset ring-surface-200 focus:ring-2 focus:ring-primary-600"
+              className="ui-select w-full rounded-xl border-0 bg-surface-50 pl-4 py-2.5 text-sm text-surface-900 ring-1 ring-surface-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:text-surface-400"
               value={courseFacultyDraft}
               onChange={(event) => setCourseFacultyDraft(event.target.value)}
               disabled={availableCourseFaculties.length === 0}
@@ -519,7 +519,7 @@ export function AdminApplicationOptionsManager({
             </select>
             <input
               type="text"
-              className="rounded-lg border-0 bg-white px-3 py-2 text-sm text-surface-900 shadow-sm ring-1 ring-inset ring-surface-200 focus:ring-2 focus:ring-primary-600"
+              className="rounded-xl border-0 bg-white px-3 py-2 text-sm text-surface-900 shadow-sm ring-1 ring-inset ring-surface-200 focus:ring-2 focus:ring-primary-600"
               value={courseLabelDraft}
               onChange={(event) => setCourseLabelDraft(event.target.value)}
               placeholder="e.g. Foundation"
@@ -527,7 +527,7 @@ export function AdminApplicationOptionsManager({
             <button
               type="button"
               onClick={addCourseMapping}
-              className="rounded-lg bg-surface-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+              className="rounded-xl bg-surface-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
               disabled={campusLabels.length === 0 || availableCourseFaculties.length === 0}
             >
               Add
@@ -543,7 +543,7 @@ export function AdminApplicationOptionsManager({
                 }
 
                 return (
-                  <div key={`courses-${campus}`} className="rounded-lg bg-white p-2 ring-1 ring-inset ring-surface-200">
+                  <div key={`courses-${campus}`} className="rounded-xl bg-white p-2 ring-1 ring-inset ring-surface-200">
                     <p className="text-xs font-semibold text-surface-600">{campus}</p>
                     <div className="mt-2 space-y-2">
                       {faculties.map((faculty) => {
@@ -554,7 +554,7 @@ export function AdminApplicationOptionsManager({
                         );
 
                         return (
-                          <div key={`${campus}-${faculty}`} className="rounded-md bg-surface-50 p-2">
+                          <div key={`${campus}-${faculty}`} className="rounded-xl bg-surface-50 p-2">
                             <p className="text-xs font-medium text-surface-600">{faculty}</p>
                             <div className="mt-2 flex flex-wrap gap-2">
                               {courses.length === 0 ? (
@@ -608,12 +608,12 @@ export function AdminApplicationOptionsManager({
       </button>
 
       {error ? (
-        <div className="rounded-lg bg-danger-50 p-4 text-sm text-danger-700 ring-1 ring-danger-200">
+        <div className="rounded-xl bg-danger-50/80 p-4 text-sm text-danger-700 ring-1 ring-danger-100">
           {error}
         </div>
       ) : null}
       {success ? (
-        <div className="rounded-lg bg-success-50 p-4 text-sm text-success-700 ring-1 ring-success-200">
+        <div className="rounded-xl bg-success-50/80 p-4 text-sm text-success-700 ring-1 ring-success-100">
           {success}
         </div>
       ) : null}

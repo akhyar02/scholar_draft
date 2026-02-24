@@ -9,7 +9,7 @@ export default async function NewScholarshipPage() {
         <h1 className="text-3xl font-bold text-surface-900">Create Scholarship</h1>
         <p className="mt-2 text-surface-600">Fill in the details below to create a new scholarship opportunity.</p>
       </div>
-      <div className="rounded-lg bg-white p-8 shadow-sm ring-1 ring-surface-200">
+      <div className="rounded-2xl bg-white/80 backdrop-blur-sm p-8 shadow-sm ring-1 ring-surface-200/60">
         <AdminScholarshipForm />
       </div>
     </div>

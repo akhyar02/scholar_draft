@@ -169,7 +169,7 @@ function UploadField({
         ? "bg-success-50 ring-1 ring-success-200"
         : "bg-surface-50 ring-1 ring-surface-200 ring-dashed"
     }`}>
-      <div className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${
+      <div className={`flex size-9 shrink-0 items-center justify-center rounded-xl ${
         attachment ? "bg-success-100" : "bg-white ring-1 ring-surface-200"
       }`}>
         {isUploading ? (
@@ -198,7 +198,7 @@ function UploadField({
         ) : (
           <p className="mt-0.5 text-xs text-surface-400">PDF, JPG or PNG · max 10 MB</p>
         )}
-        <label className={`mt-2 inline-flex cursor-pointer rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+        <label className={`mt-2 inline-flex cursor-pointer rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors ${
           disabled || isUploading
             ? "cursor-not-allowed opacity-50"
             : attachment
@@ -260,7 +260,7 @@ function SiblingGroup({
           type="button"
           disabled={disabled}
           onClick={() => setItems([...items, emptySiblingMember(withSalary)])}
-          className="flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-primary-500 disabled:opacity-50"
+          className="flex items-center gap-1.5 rounded-xl bg-primary-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-primary-500 disabled:opacity-50"
         >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="size-3.5">
             <path d="M8.75 3.75a.75.75 0 0 0-1.5 0v3.5h-3.5a.75.75 0 0 0 0 1.5h3.5v3.5a.75.75 0 0 0 1.5 0v-3.5h3.5a.75.75 0 0 0 0-1.5h-3.5v-3.5Z" />
@@ -281,7 +281,7 @@ function SiblingGroup({
                   type="button"
                   disabled={disabled}
                   onClick={() => setItems(items.filter((row) => row.memberId !== item.memberId))}
-                  className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold text-danger-600 transition-colors hover:bg-danger-50 disabled:opacity-50"
+                  className="flex items-center gap-1 rounded-xl px-2 py-1 text-xs font-semibold text-danger-600 transition-colors hover:bg-danger-50 disabled:opacity-50"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="size-3">
                     <path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.711Z" clipRule="evenodd" />
@@ -294,7 +294,7 @@ function SiblingGroup({
                 <div className="space-y-1.5">
                   <label className="block text-xs font-semibold uppercase tracking-wide text-surface-500">Full Name</label>
                   <input
-                    className="w-full rounded-lg border-0 bg-white px-3 py-2 text-sm text-surface-900 ring-1 ring-surface-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:bg-surface-50"
+                    className="w-full rounded-xl border-0 bg-white px-3 py-2 text-sm text-surface-900 ring-1 ring-surface-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:bg-surface-50"
                     placeholder="e.g. Ahmad bin Ali"
                     value={item.name}
                     disabled={disabled}
@@ -309,7 +309,7 @@ function SiblingGroup({
                 <div className="space-y-1.5">
                   <label className="block text-xs font-semibold uppercase tracking-wide text-surface-500">ID Number</label>
                   <input
-                    className="w-full rounded-lg border-0 bg-white px-3 py-2 text-sm text-surface-900 ring-1 ring-surface-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:bg-surface-50"
+                    className="w-full rounded-xl border-0 bg-white px-3 py-2 text-sm text-surface-900 ring-1 ring-surface-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:bg-surface-50"
                     placeholder="IC / Passport No."
                     value={item.idNumber}
                     disabled={disabled}
@@ -325,7 +325,7 @@ function SiblingGroup({
                   <div className="space-y-1.5">
                     <label className="block text-xs font-semibold uppercase tracking-wide text-surface-500">Monthly Salary (MYR)</label>
                     <input
-                      className="w-full rounded-lg border-0 bg-white px-3 py-2 text-sm text-surface-900 ring-1 ring-surface-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:bg-surface-50"
+                      className="w-full rounded-xl border-0 bg-white px-3 py-2 text-sm text-surface-900 ring-1 ring-surface-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:bg-surface-50"
                       placeholder="e.g. 2000"
                       type="number"
                       min={0}
@@ -663,10 +663,10 @@ export function ApplicationV2IntakeForm({
   }
 
   return (
-    <form onSubmit={submit} className="space-y-6">
+    <form onSubmit={submit} className="application-form-shell space-y-6">
       {mode === "student" && scholarshipTitle ? (
         <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-surface-200">
-          <div className="h-1.5 bg-gradient-to-r from-primary-500 to-primary-700" />
+          <div className="h-1.5 bg-linear-to-r from-primary-500 to-primary-700" />
           <div className="px-6 py-5">
             <p className="text-xs font-semibold uppercase tracking-wider text-primary-600">Scholarship Application</p>
             <h2 className="mt-1 text-2xl font-bold text-surface-900">{scholarshipTitle}</h2>
@@ -709,7 +709,7 @@ export function ApplicationV2IntakeForm({
 
           <div className="space-y-1.5">
             <label className="block text-xs font-semibold uppercase tracking-wide text-surface-500">Campus</label>
-            <select className="w-full rounded-xl border-0 bg-surface-50 px-4 py-2.5 text-sm text-surface-900 ring-1 ring-surface-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:text-surface-400" value={form.personalInfo.campusOptionId} disabled={!isEditable || optionsLoading} onChange={(event) => { setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, campusOptionId: event.target.value, facultyOptionId: "", courseOptionId: "" } })); markTouched("personalInfo.campusOptionId"); }} required>
+            <select className="ui-select w-full rounded-xl border-0 bg-surface-50 px-4 py-2.5 text-sm text-surface-900 ring-1 ring-surface-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:text-surface-400" value={form.personalInfo.campusOptionId} disabled={!isEditable || optionsLoading} onChange={(event) => { setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, campusOptionId: event.target.value, facultyOptionId: "", courseOptionId: "" } })); markTouched("personalInfo.campusOptionId"); }} required>
               <option value="">Select Campus</option>
               {campuses.map((campus) => (
                 <option key={campus.id} value={campus.id}>{campus.label}</option>
@@ -720,7 +720,7 @@ export function ApplicationV2IntakeForm({
 
           <div className="space-y-1.5">
             <label className="block text-xs font-semibold uppercase tracking-wide text-surface-500">Faculty</label>
-            <select className="w-full rounded-xl border-0 bg-surface-50 px-4 py-2.5 text-sm text-surface-900 ring-1 ring-surface-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:text-surface-400" value={form.personalInfo.facultyOptionId} disabled={!isEditable || optionsLoading || !selectedCampus} onChange={(event) => { setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, facultyOptionId: event.target.value, courseOptionId: "" } })); markTouched("personalInfo.facultyOptionId"); }} required>
+            <select className="ui-select w-full rounded-xl border-0 bg-surface-50 px-4 py-2.5 text-sm text-surface-900 ring-1 ring-surface-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:text-surface-400" value={form.personalInfo.facultyOptionId} disabled={!isEditable || optionsLoading || !selectedCampus} onChange={(event) => { setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, facultyOptionId: event.target.value, courseOptionId: "" } })); markTouched("personalInfo.facultyOptionId"); }} required>
               <option value="">Select Faculty</option>
               {facultyOptions.map((faculty) => (
                 <option key={faculty.id} value={faculty.id}>{faculty.label}</option>
@@ -731,7 +731,7 @@ export function ApplicationV2IntakeForm({
 
           <div className="space-y-1.5">
             <label className="block text-xs font-semibold uppercase tracking-wide text-surface-500">Course Level</label>
-            <select className="w-full rounded-xl border-0 bg-surface-50 px-4 py-2.5 text-sm text-surface-900 ring-1 ring-surface-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:text-surface-400" value={form.personalInfo.courseOptionId} disabled={!isEditable || optionsLoading || !selectedFaculty} onChange={(event) => { setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, courseOptionId: event.target.value } })); markTouched("personalInfo.courseOptionId"); }} required>
+            <select className="ui-select w-full rounded-xl border-0 bg-surface-50 px-4 py-2.5 text-sm text-surface-900 ring-1 ring-surface-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:text-surface-400" value={form.personalInfo.courseOptionId} disabled={!isEditable || optionsLoading || !selectedFaculty} onChange={(event) => { setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, courseOptionId: event.target.value } })); markTouched("personalInfo.courseOptionId"); }} required>
               <option value="">Select Course Level</option>
               {courseOptions.map((course) => (
                 <option key={course.id} value={course.id}>{course.label}</option>
@@ -742,7 +742,7 @@ export function ApplicationV2IntakeForm({
 
           <div className="space-y-1.5">
             <label className="block text-xs font-semibold uppercase tracking-wide text-surface-500">Identification Type</label>
-            <select className="w-full rounded-xl border-0 bg-surface-50 px-4 py-2.5 text-sm text-surface-900 ring-1 ring-surface-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:text-surface-400" value={form.personalInfo.idType} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, idType: event.target.value as "mykad" | "passport" } }))} required>
+            <select className="ui-select w-full rounded-xl border-0 bg-surface-50 px-4 py-2.5 text-sm text-surface-900 ring-1 ring-surface-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:text-surface-400" value={form.personalInfo.idType} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, idType: event.target.value as "mykad" | "passport" } }))} required>
               {IDENTIFICATION_TYPES.map((type) => <option key={type} value={type}>{type.toUpperCase()}</option>)}
             </select>
           </div>
@@ -779,21 +779,21 @@ export function ApplicationV2IntakeForm({
 
           <div className="space-y-1.5">
             <label className="block text-xs font-semibold uppercase tracking-wide text-surface-500">Gender</label>
-            <select className="w-full rounded-xl border-0 bg-surface-50 px-4 py-2.5 text-sm text-surface-900 ring-1 ring-surface-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:text-surface-400" value={form.personalInfo.gender} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, gender: event.target.value as "male" | "female" } }))} required>
+            <select className="ui-select w-full rounded-xl border-0 bg-surface-50 px-4 py-2.5 text-sm text-surface-900 ring-1 ring-surface-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:text-surface-400" value={form.personalInfo.gender} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, gender: event.target.value as "male" | "female" } }))} required>
               {GENDERS.map((gender) => <option key={gender} value={gender}>{gender}</option>)}
             </select>
           </div>
 
           <div className="space-y-1.5">
             <label className="block text-xs font-semibold uppercase tracking-wide text-surface-500">Religion</label>
-            <select className="w-full rounded-xl border-0 bg-surface-50 px-4 py-2.5 text-sm text-surface-900 ring-1 ring-surface-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:text-surface-400" value={form.personalInfo.religion} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, religion: event.target.value as "islam" | "non_islam" } }))} required>
+            <select className="ui-select w-full rounded-xl border-0 bg-surface-50 px-4 py-2.5 text-sm text-surface-900 ring-1 ring-surface-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:text-surface-400" value={form.personalInfo.religion} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, religion: event.target.value as "islam" | "non_islam" } }))} required>
               {RELIGIONS.map((religion) => <option key={religion} value={religion}>{religion.replace("_", " ")}</option>)}
             </select>
           </div>
 
           <div className="space-y-1.5">
             <label className="block text-xs font-semibold uppercase tracking-wide text-surface-500">Nationality</label>
-            <select className="w-full rounded-xl border-0 bg-surface-50 px-4 py-2.5 text-sm text-surface-900 ring-1 ring-surface-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:text-surface-400" value={form.personalInfo.nationality} disabled={!isEditable} onChange={(event) => { setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, nationality: event.target.value as "malaysian" | "non_malaysian", countryCode: event.target.value === "non_malaysian" ? prev.personalInfo.countryCode : null } })); markTouched("personalInfo.nationality"); }} required>
+            <select className="ui-select w-full rounded-xl border-0 bg-surface-50 px-4 py-2.5 text-sm text-surface-900 ring-1 ring-surface-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:text-surface-400" value={form.personalInfo.nationality} disabled={!isEditable} onChange={(event) => { setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, nationality: event.target.value as "malaysian" | "non_malaysian", countryCode: event.target.value === "non_malaysian" ? prev.personalInfo.countryCode : null } })); markTouched("personalInfo.nationality"); }} required>
               {NATIONALITIES.map((nationality) => <option key={nationality} value={nationality}>{nationality.replace("_", " ")}</option>)}
             </select>
             <FieldError message={fieldError("personalInfo.nationality")} />
@@ -803,7 +803,7 @@ export function ApplicationV2IntakeForm({
         {form.personalInfo.nationality === "non_malaysian" ? (
           <div className="space-y-1.5">
             <label className="block text-xs font-semibold uppercase tracking-wide text-surface-500">Country of Origin</label>
-            <select className="w-full rounded-xl border-0 bg-surface-50 px-4 py-2.5 text-sm text-surface-900 ring-1 ring-surface-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:text-surface-400" value={form.personalInfo.countryCode ?? ""} disabled={!isEditable} onChange={(event) => { setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, countryCode: event.target.value || null } })); markTouched("personalInfo.countryCode"); }} required>
+            <select className="ui-select w-full rounded-xl border-0 bg-surface-50 px-4 py-2.5 text-sm text-surface-900 ring-1 ring-surface-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:text-surface-400" value={form.personalInfo.countryCode ?? ""} disabled={!isEditable} onChange={(event) => { setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, countryCode: event.target.value || null } })); markTouched("personalInfo.countryCode"); }} required>
               <option value="">Select Country</option>
               {COUNTRIES.map((country) => (
                 <option key={country.code} value={country.code}>{country.name}</option>
@@ -846,10 +846,10 @@ export function ApplicationV2IntakeForm({
               </svg>
               Father / Guardian
             </h4>
-            <label className="inline-flex items-center gap-2 text-xs font-semibold text-surface-700">
+            <label className="ui-checkbox-pill inline-flex items-center gap-2 text-xs font-semibold text-surface-700">
               <input
                 type="checkbox"
-                className="size-4 rounded border-surface-300 text-primary-600 focus:ring-primary-500"
+                className="ui-checkbox size-4 rounded border-surface-300 text-primary-600 focus:ring-primary-500"
                 checked={hasFatherGuardian}
                 disabled={!isEditable}
                 onChange={(event) => setGuardianAvailability("father", event.target.checked)}
@@ -868,13 +868,13 @@ export function ApplicationV2IntakeForm({
                   </div>
                   <div className="space-y-1.5">
                     <label className="block text-xs font-semibold uppercase tracking-wide text-surface-500">Relationship</label>
-                    <select className="w-full rounded-xl border-0 bg-surface-50 px-4 py-2.5 text-sm text-surface-900 ring-1 ring-surface-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:text-surface-400" value={form.familyInfo.fatherGuardian.relationship} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, fatherGuardian: { ...prev.familyInfo.fatherGuardian, relationship: event.target.value as "father" | "guardian" } } }))} required>
+                    <select className="ui-select w-full rounded-xl border-0 bg-surface-50 px-4 py-2.5 text-sm text-surface-900 ring-1 ring-surface-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:text-surface-400" value={form.familyInfo.fatherGuardian.relationship} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, fatherGuardian: { ...prev.familyInfo.fatherGuardian, relationship: event.target.value as "father" | "guardian" } } }))} required>
                       {FATHER_GUARDIAN_RELATIONSHIPS.map((item) => <option key={item} value={item}>{item}</option>)}
                     </select>
                   </div>
                   <div className="space-y-1.5">
                     <label className="block text-xs font-semibold uppercase tracking-wide text-surface-500">Identification Type</label>
-                    <select className="w-full rounded-xl border-0 bg-surface-50 px-4 py-2.5 text-sm text-surface-900 ring-1 ring-surface-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:text-surface-400" value={form.familyInfo.fatherGuardian.identificationType} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, fatherGuardian: { ...prev.familyInfo.fatherGuardian, identificationType: event.target.value as "mykad" | "passport" } } }))} required>
+                    <select className="ui-select w-full rounded-xl border-0 bg-surface-50 px-4 py-2.5 text-sm text-surface-900 ring-1 ring-surface-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:text-surface-400" value={form.familyInfo.fatherGuardian.identificationType} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, fatherGuardian: { ...prev.familyInfo.fatherGuardian, identificationType: event.target.value as "mykad" | "passport" } } }))} required>
                       {IDENTIFICATION_TYPES.map((item) => <option key={item} value={item}>{item.toUpperCase()}</option>)}
                     </select>
                   </div>
@@ -922,10 +922,10 @@ export function ApplicationV2IntakeForm({
               </svg>
               Mother / Guardian
             </h4>
-            <label className="inline-flex items-center gap-2 text-xs font-semibold text-surface-700">
+            <label className="ui-checkbox-pill inline-flex items-center gap-2 text-xs font-semibold text-surface-700">
               <input
                 type="checkbox"
-                className="size-4 rounded border-surface-300 text-primary-600 focus:ring-primary-500"
+                className="ui-checkbox size-4 rounded border-surface-300 text-primary-600 focus:ring-primary-500"
                 checked={hasMotherGuardian}
                 disabled={!isEditable}
                 onChange={(event) => setGuardianAvailability("mother", event.target.checked)}
@@ -944,13 +944,13 @@ export function ApplicationV2IntakeForm({
                   </div>
                   <div className="space-y-1.5">
                     <label className="block text-xs font-semibold uppercase tracking-wide text-surface-500">Relationship</label>
-                    <select className="w-full rounded-xl border-0 bg-surface-50 px-4 py-2.5 text-sm text-surface-900 ring-1 ring-surface-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:text-surface-400" value={form.familyInfo.motherGuardian.relationship} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, motherGuardian: { ...prev.familyInfo.motherGuardian, relationship: event.target.value as "mother" | "guardian" } } }))} required>
+                    <select className="ui-select w-full rounded-xl border-0 bg-surface-50 px-4 py-2.5 text-sm text-surface-900 ring-1 ring-surface-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:text-surface-400" value={form.familyInfo.motherGuardian.relationship} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, motherGuardian: { ...prev.familyInfo.motherGuardian, relationship: event.target.value as "mother" | "guardian" } } }))} required>
                       {MOTHER_GUARDIAN_RELATIONSHIPS.map((item) => <option key={item} value={item}>{item}</option>)}
                     </select>
                   </div>
                   <div className="space-y-1.5">
                     <label className="block text-xs font-semibold uppercase tracking-wide text-surface-500">Identification Type</label>
-                    <select className="w-full rounded-xl border-0 bg-surface-50 px-4 py-2.5 text-sm text-surface-900 ring-1 ring-surface-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:text-surface-400" value={form.familyInfo.motherGuardian.identificationType} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, motherGuardian: { ...prev.familyInfo.motherGuardian, identificationType: event.target.value as "mykad" | "passport" } } }))} required>
+                    <select className="ui-select w-full rounded-xl border-0 bg-surface-50 px-4 py-2.5 text-sm text-surface-900 ring-1 ring-surface-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:text-surface-400" value={form.familyInfo.motherGuardian.identificationType} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, motherGuardian: { ...prev.familyInfo.motherGuardian, identificationType: event.target.value as "mykad" | "passport" } } }))} required>
                       {IDENTIFICATION_TYPES.map((item) => <option key={item} value={item}>{item.toUpperCase()}</option>)}
                     </select>
                   </div>
@@ -1077,10 +1077,10 @@ export function ApplicationV2IntakeForm({
           </div>
           <div className="divide-y divide-surface-100">
             <div className="space-y-3 p-4">
-            <label className="flex cursor-pointer items-start gap-3">
+            <label className="ui-checkbox-row p-1 flex cursor-pointer items-start gap-3">
               <input
                 type="checkbox"
-                className="mt-0.5 size-4 rounded accent-primary-600"
+                className="ui-checkbox mt-0.5 size-4 rounded accent-primary-600"
                 checked={siblings.specialTreatment.hasOku}
                 disabled={!isEditable}
                 onChange={(event) =>
@@ -1116,10 +1116,10 @@ export function ApplicationV2IntakeForm({
             ) : null}
             </div>
             <div className="space-y-3 p-4">
-            <label className="flex cursor-pointer items-start gap-3">
+            <label className="ui-checkbox-row flex cursor-pointer items-start gap-3">
               <input
                 type="checkbox"
-                className="mt-0.5 size-4 rounded accent-primary-600"
+                className="ui-checkbox mt-0.5 size-4 rounded accent-primary-600"
                 checked={siblings.specialTreatment.hasChronicIllness}
                 disabled={!isEditable}
                 onChange={(event) =>
@@ -1194,10 +1194,10 @@ export function ApplicationV2IntakeForm({
           uploadingSlot={uploadingSlot}
         />
 
-        <label className="flex cursor-pointer items-center gap-3 rounded-xl bg-surface-50 p-4 ring-1 ring-surface-200 transition-colors hover:bg-primary-50 hover:ring-primary-200">
+        <label className="ui-checkbox-row flex cursor-pointer items-center gap-3 rounded-xl bg-surface-50 p-4 ring-1 ring-surface-200 transition-colors hover:bg-primary-50 hover:ring-primary-200">
           <input
             type="checkbox"
-            className="size-4 rounded accent-primary-600"
+            className="ui-checkbox size-4 rounded accent-primary-600"
             checked={form.financialDeclaration.receivingOtherSupport}
             disabled={!isEditable}
             onChange={(event) =>
@@ -1227,10 +1227,10 @@ export function ApplicationV2IntakeForm({
               {supportProviders.map((provider) => {
                 const checked = form.financialDeclaration.supportProviderOptionIds.includes(provider.id);
                 return (
-                  <label key={provider.id} className="flex cursor-pointer items-center gap-2.5 rounded-lg p-2.5 text-sm transition-colors hover:bg-surface-50">
+                  <label key={provider.id} className="ui-checkbox-row flex cursor-pointer items-center gap-2.5 rounded-xl p-2.5 text-sm transition-colors hover:bg-surface-50">
                     <input
                       type="checkbox"
-                      className="size-4 rounded accent-primary-600"
+                      className="ui-checkbox size-4 rounded accent-primary-600"
                       checked={checked}
                       disabled={!isEditable}
                       onChange={(event) => {
