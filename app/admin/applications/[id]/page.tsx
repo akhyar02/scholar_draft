@@ -5,7 +5,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { isApplicationFormV2 } from "@/lib/application-v2";
 import { listApplicationOptionsTree } from "@/lib/application-options";
 import { getDb } from "@/lib/db";
-import type { ApplicationFormPayloadV2 } from "@/lib/db/types";
+import type { ApplicationFormPayloadV2 } from "@/lib/application-types";
 import { requirePageUser } from "@/lib/page-auth";
 import { resolveStoredObjectUrl } from "@/lib/s3-object-url";
 

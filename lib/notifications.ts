@@ -198,8 +198,8 @@ function buildSubmissionEmail({
   setPasswordUrl,
 }: {
   scholarshipTitle: string;
-  tempPassword: string;
-  setPasswordUrl: string;
+  tempPassword?: string;
+  setPasswordUrl?: string;
 }) {
   const baseUrl = getEnv().NEXTAUTH_URL ?? "https://scholarhub.yum.edu.my";
   const bodyContent = `
@@ -235,6 +235,7 @@ function buildSubmissionEmail({
     </table>
 
     <!-- Account credentials -->
+    ${tempPassword && setPasswordUrl ? `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
       <tr>
         <td style="background-color:#eff6ff;border-radius:12px;padding:20px;border:1px solid #bfdbfe;">
@@ -269,6 +270,7 @@ function buildSubmissionEmail({
         </td>
       </tr>
     </table>
+    ` : ''}
 
     <!-- What's next -->
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
@@ -310,9 +312,11 @@ function buildSubmissionEmail({
   `;
 
   return {
-    subject: "Application submitted — here are your login credentials",
+    subject: "Application submitted" + (tempPassword ? " — here are your login credentials" : ""),
     html: wrapInEmailLayout(bodyContent),
-    text: `We received your application for ${scholarshipTitle}. Your temporary password is: ${tempPassword}. Set your own password here: ${setPasswordUrl}`,
+    text: tempPassword && setPasswordUrl
+      ? `We received your application for ${scholarshipTitle}. Your temporary password is: ${tempPassword}. Set your own password here: ${setPasswordUrl}`
+      : `We received your application for ${scholarshipTitle}. You can track your application status on the portal.`,
   };
 }
 
@@ -320,8 +324,8 @@ export async function queueAndSendSubmissionEmail(params: {
   applicationId: string;
   recipientEmail: string;
   scholarshipTitle: string;
-  tempPassword: string;
-  setPasswordUrl: string;
+  tempPassword?: string;
+  setPasswordUrl?: string;
 }) {
   return queueAndSendEmail({
     ...params,

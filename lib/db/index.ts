@@ -2,11 +2,11 @@ import { Kysely, PostgresDialect } from "kysely";
 import { Pool } from "pg";
 
 import { getEnv } from "@/lib/env";
-import { Database } from "@/lib/db/types";
+import { DB } from "@/lib/db/types";
 
 declare global {
   // eslint-disable-next-line no-var
-  var __DB__: Kysely<Database> | undefined;
+  var __DB__: Kysely<DB> | undefined;
 }
 
 export function getDb() {
@@ -17,7 +17,7 @@ export function getDb() {
       max: 10,
     });
 
-    global.__DB__ = new Kysely<Database>({
+    global.__DB__ = new Kysely<DB>({
       dialect: new PostgresDialect({ pool }),
     });
   }

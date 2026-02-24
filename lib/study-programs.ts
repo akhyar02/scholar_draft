@@ -1,9 +1,9 @@
 import type { Kysely } from "kysely";
 
 import { getDb } from "@/lib/db";
-import type { Database } from "@/lib/db/types";
+import type { DB } from "@/lib/db/types";
 
-type DbOrTransaction = Kysely<Database>;
+type DbOrTransaction = Kysely<DB>;
 
 export function normalizeStudyProgramName(value: string) {
   return value.trim().replace(/\s+/g, " ");

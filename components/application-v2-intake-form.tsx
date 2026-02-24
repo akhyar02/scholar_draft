@@ -24,7 +24,7 @@ import { publicApi } from "@/lib/api/services/public-client";
 import { studentApi } from "@/lib/api/services/student-client";
 import { createDefaultApplicationFormV2, isApplicationFormV2, mergeApplicationFormV2 } from "@/lib/application-v2";
 import { applicationFormV2Schema } from "@/lib/validation";
-import type { ApplicationFormPayloadV2, SiblingMemberPayload } from "@/lib/db/types";
+import type { ApplicationFormPayloadV2, SiblingMemberPayload } from "@/lib/application-types";
 
 type CampusOption = ApplicationOptionsTree["campuses"][number];
 type SupportProviderOption = ApplicationOptionsTree["supportProviders"][number];

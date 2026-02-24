@@ -2,9 +2,9 @@ import type { Kysely } from "kysely";
 
 import type { ApplicationOptionKind } from "@/lib/constants";
 import { getDb } from "@/lib/db";
-import type { Database } from "@/lib/db/types";
+import type { DB } from "@/lib/db/types";
 
-type DbOrTransaction = Kysely<Database>;
+type DbOrTransaction = Kysely<DB>;
 
 type BaseOption = {
   id: string;

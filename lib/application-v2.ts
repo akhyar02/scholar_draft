@@ -1,4 +1,4 @@
-import type { ApplicationFormPayloadV2, SiblingMemberPayload } from "@/lib/db/types";
+import type { ApplicationFormPayloadV2, SiblingMemberPayload } from "@/lib/application-types";
 
 type DeepPartial<T> = {
   [K in keyof T]?: T[K] extends Array<infer U>

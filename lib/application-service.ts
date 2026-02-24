@@ -2,10 +2,10 @@ import type { Kysely } from "kysely";
 
 import { createDefaultApplicationFormV2 } from "@/lib/application-v2";
 import { getDb } from "@/lib/db";
-import type { Database } from "@/lib/db/types";
+import type { DB } from "@/lib/db/types";
 import { ApplicationStatus, DOCUMENT_TYPES } from "@/lib/constants";
 
-type DbOrTransaction = Kysely<Database>;
+type DbOrTransaction = Kysely<DB>;
 
 export async function getOwnedApplication(applicationId: string, studentId: string) {
   const db = getDb();
