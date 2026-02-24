@@ -151,24 +151,26 @@ export default async function AdminApplicationsPage({
       ) : (
         <div className="grid gap-4">
           {applications.map((application, i) => (
-            <article 
-              key={application.id} 
-              className={`card-hover group relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl bg-white/80 p-6 shadow-sm ring-1 ring-surface-200/60 backdrop-blur-sm animate-fade-in-up animate-delay-${Math.min(i, 3) * 100}`}
+            <article
+              key={application.id}
+              className={`card-hover group relative flex min-w-0 flex-col justify-between gap-4 rounded-2xl bg-white/80 p-6 shadow-sm ring-1 ring-surface-200/60 backdrop-blur-sm sm:flex-row sm:items-center animate-fade-in-up animate-delay-${Math.min(i, 3) * 100}`}
             >
-              <div className="space-y-2">
-                <h2 className="text-lg font-bold text-surface-900 group-hover:text-primary-600 transition-colors">
+              <div className="min-w-0 space-y-2">
+                <h2 className="break-words text-lg font-bold text-surface-900 transition-colors group-hover:text-primary-600">
                   {application.scholarship_title}
                 </h2>
-                <div className="flex items-center gap-2 text-sm text-surface-400">
-                  <User className="h-4 w-4" />
-                  <span>{application.student_name} ({application.student_email})</span>
+                <div className="flex min-w-0 items-start gap-2 text-sm text-surface-400">
+                  <User className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span className="min-w-0 break-all">
+                    {application.student_name} ({application.student_email})
+                  </span>
                 </div>
               </div>
-              
-              <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between gap-4">
+
+              <div className="flex w-full flex-col items-start gap-3 sm:w-auto sm:items-end">
                 <StatusBadge status={application.status} />
-                <Link 
-                  className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-600 hover:text-primary-700 transition-colors" 
+                <Link
+                  className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-600 transition-colors hover:text-primary-700"
                   href={`/admin/applications/${application.id}`}
                 >
                   Open Review

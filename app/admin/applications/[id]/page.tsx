@@ -180,18 +180,18 @@ export default async function AdminApplicationDetailPage({
     : [];
 
   return (
-    <div className="space-y-8">
+    <div className="min-w-0 space-y-8">
       <div>
         <h1 className="text-3xl font-bold text-surface-900">Application Review</h1>
         <p className="mt-2 text-surface-600">Review application details, documents, and update status.</p>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-3">
-        <div className="space-y-8 lg:col-span-2">
-          <section className="rounded-2xl bg-white/80 backdrop-blur-sm p-8 shadow-sm ring-1 ring-surface-200/60">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-2xl font-bold text-surface-900">{application.scholarship_title}</h2>
+      <div className="grid min-w-0 gap-8 lg:grid-cols-3">
+        <div className="min-w-0 space-y-8 lg:col-span-2">
+          <section className="rounded-2xl bg-white/80 p-6 shadow-sm ring-1 ring-surface-200/60 backdrop-blur-sm sm:p-8">
+            <div className="flex min-w-0 items-start justify-between gap-4">
+              <div className="min-w-0">
+                <h2 className="break-words text-2xl font-bold text-surface-900">{application.scholarship_title}</h2>
                 <div className="mt-3">
                   <StatusBadge status={application.status} />
                 </div>
@@ -199,18 +199,18 @@ export default async function AdminApplicationDetailPage({
             </div>
 
             <div className="mt-8 grid gap-6 sm:grid-cols-2">
-              <div>
+              <div className="min-w-0">
                 <p className="text-sm font-medium text-surface-500">Applicant</p>
-                <p className="mt-1 font-medium text-surface-900">{application.student_name}</p>
-                <p className="text-sm text-surface-600">{application.student_email}</p>
-                <p className="text-sm text-surface-600">{application.student_phone}</p>
+                <p className="mt-1 break-words font-medium text-surface-900">{application.student_name}</p>
+                <p className="break-all text-sm text-surface-600">{application.student_email}</p>
+                <p className="break-all text-sm text-surface-600">{application.student_phone}</p>
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-sm font-medium text-surface-500">Academic Info</p>
-                <p className="mt-1 font-medium text-surface-900">{application.student_program}</p>
-                <p className="text-sm text-surface-600">{application.student_institution}</p>
+                <p className="mt-1 break-words font-medium text-surface-900">{application.student_program}</p>
+                <p className="break-words text-sm text-surface-600">{application.student_institution}</p>
                 {application.student_graduation_year || application.student_gpa ? (
-                  <p className="text-sm text-surface-600">
+                  <p className="break-words text-sm text-surface-600">
                     {application.student_graduation_year ? `Class of ${application.student_graduation_year}` : ""}
                     {application.student_graduation_year && application.student_gpa ? " • " : ""}
                     {typeof application.student_gpa === "number" ? `GPA: ${Number(application.student_gpa).toFixed(2)}` : ""}
@@ -222,9 +222,9 @@ export default async function AdminApplicationDetailPage({
 
           {v2Form ? (
             <>
-              <section className="rounded-2xl bg-white/80 backdrop-blur-sm p-8 shadow-sm ring-1 ring-surface-200/60">
+              <section className="min-w-0 rounded-2xl bg-white/80 backdrop-blur-sm p-8 shadow-sm ring-1 ring-surface-200/60">
                 <h2 className="text-xl font-bold text-surface-900">Personal Info</h2>
-                <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                <div className="mt-6 grid min-w-0 gap-4 sm:grid-cols-2 [&>*]:min-w-0 [&_p]:[overflow-wrap:anywhere]">
                   <div className="rounded-xl bg-surface-50 p-4 ring-1 ring-surface-200"><p className="text-xs uppercase text-surface-500">Full Name</p><p className="mt-1 text-sm text-surface-900">{v2Form.personalInfo.fullName}</p></div>
                   <div className="rounded-xl bg-surface-50 p-4 ring-1 ring-surface-200"><p className="text-xs uppercase text-surface-500">Student ID</p><p className="mt-1 text-sm text-surface-900">{v2Form.personalInfo.studentId}</p></div>
                   <div className="rounded-xl bg-surface-50 p-4 ring-1 ring-surface-200"><p className="text-xs uppercase text-surface-500">ID Type</p><p className="mt-1 text-sm text-surface-900">{v2Form.personalInfo.idType}</p></div>
@@ -241,9 +241,9 @@ export default async function AdminApplicationDetailPage({
                 </div>
               </section>
 
-              <section className="rounded-2xl bg-white/80 backdrop-blur-sm p-8 shadow-sm ring-1 ring-surface-200/60">
+              <section className="min-w-0 rounded-2xl bg-white/80 backdrop-blur-sm p-8 shadow-sm ring-1 ring-surface-200/60">
                 <h2 className="text-xl font-bold text-surface-900">Family Info</h2>
-                <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                <div className="mt-6 grid min-w-0 gap-4 sm:grid-cols-2 [&>*]:min-w-0 [&_p]:[overflow-wrap:anywhere]">
                   <div className="rounded-xl bg-surface-50 p-4 ring-1 ring-surface-200 space-y-1">
                     <p className="text-xs uppercase text-surface-500">Father / Guardian</p>
                     {v2Form.familyInfo.hasFatherGuardian === false ? (
@@ -274,7 +274,7 @@ export default async function AdminApplicationDetailPage({
                   </div>
                 </div>
 
-                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <div className="mt-4 grid min-w-0 gap-4 sm:grid-cols-2 [&>*]:min-w-0 [&_p]:[overflow-wrap:anywhere]">
                   <div className="rounded-xl bg-surface-50 p-4 ring-1 ring-surface-200"><p className="text-xs uppercase text-surface-500">Above 18 Working</p><p className="mt-1 text-sm text-surface-900">{v2Form.familyInfo.siblings.above18Working.length}</p></div>
                   <div className="rounded-xl bg-surface-50 p-4 ring-1 ring-surface-200"><p className="text-xs uppercase text-surface-500">Above 18 Non-Working</p><p className="mt-1 text-sm text-surface-900">{v2Form.familyInfo.siblings.above18NonWorking.length}</p></div>
                   <div className="rounded-xl bg-surface-50 p-4 ring-1 ring-surface-200"><p className="text-xs uppercase text-surface-500">Studying in IPT</p><p className="mt-1 text-sm text-surface-900">{v2Form.familyInfo.siblings.studyInIpt.length}</p></div>
@@ -284,9 +284,9 @@ export default async function AdminApplicationDetailPage({
                 </div>
               </section>
 
-              <section className="rounded-2xl bg-white/80 backdrop-blur-sm p-8 shadow-sm ring-1 ring-surface-200/60">
+              <section className="min-w-0 rounded-2xl bg-white/80 backdrop-blur-sm p-8 shadow-sm ring-1 ring-surface-200/60">
                 <h2 className="text-xl font-bold text-surface-900">Financial Declaration</h2>
-                <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                <div className="mt-6 grid min-w-0 gap-4 sm:grid-cols-2 [&>*]:min-w-0 [&_p]:[overflow-wrap:anywhere]">
                   <div className="rounded-xl bg-surface-50 p-4 ring-1 ring-surface-200"><p className="text-xs uppercase text-surface-500">Bank Name</p><p className="mt-1 text-sm text-surface-900">{v2Form.financialDeclaration.bankName}</p></div>
                   <div className="rounded-xl bg-surface-50 p-4 ring-1 ring-surface-200"><p className="text-xs uppercase text-surface-500">Account Number</p><p className="mt-1 text-sm text-surface-900">{v2Form.financialDeclaration.accountNumber}</p></div>
                   <div className="rounded-xl bg-surface-50 p-4 ring-1 ring-surface-200"><p className="text-xs uppercase text-surface-500">Receiving Other Support</p><p className="mt-1 text-sm text-surface-900">{v2Form.financialDeclaration.receivingOtherSupport ? "Yes" : "No"}</p></div>
@@ -397,8 +397,8 @@ export default async function AdminApplicationDetailPage({
           </section>
         </div>
 
-        <div className="space-y-8">
-          <div className="sticky top-24">
+        <div className="min-w-0 space-y-8">
+          <div className="min-w-0 lg:sticky lg:top-24">
             <AdminStatusControls
               applicationId={application.id}
               currentStatus={application.status}
