@@ -5,6 +5,7 @@ import { NextRequest } from "next/server";
 import { getDb } from "@/lib/db";
 import { getEnv } from "@/lib/env";
 import { jsonError, jsonOk } from "@/lib/http";
+import { getClientIp, jsonRateLimited, takeRateLimit } from "@/lib/rate-limit";
 import { getS3Client } from "@/lib/s3";
 import { publicUploadUrlV2Schema } from "@/lib/validation";
 
@@ -15,6 +16,20 @@ function sanitizeSlotForKey(value: string) {
 }
 
 export async function POST(request: NextRequest) {
+  const rateLimit = takeRateLimit({
+    namespace: "public-upload-url",
+    key: getClientIp(request),
+    limit: 30,
+    windowMs: 60_000,
+  });
+  if (!rateLimit.allowed) {
+    return jsonRateLimited(
+      "RATE_LIMITED",
+      "Too many upload URL requests. Please try again shortly.",
+      rateLimit.retryAfterSeconds,
+    );
+  }
+
   const payload = await request.json().catch(() => null);
   const parsed = publicUploadUrlV2Schema.safeParse(payload);
 

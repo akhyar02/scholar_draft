@@ -91,8 +91,34 @@ function emptySiblingMember(withSalary = false): SiblingMemberPayload {
     memberId: crypto.randomUUID(),
     name: "",
     idNumber: "",
-    ...(withSalary ? { monthlySalary: 0 } : {}),
+    ...(withSalary ? { monthlySalary: Number.NaN } : {}),
   };
+}
+
+function createEditableDefaultForm(params: {
+  fullName: string;
+  email: string;
+  mobileNumber: string;
+}) {
+  const form = createDefaultApplicationFormV2(params);
+
+  form.familyInfo.fatherGuardian.monthlySalary = Number.NaN;
+  form.familyInfo.motherGuardian.monthlySalary = Number.NaN;
+  form.financialDeclaration.mmuOutstandingInvoiceAmount = Number.NaN;
+
+  return form;
+}
+
+function parseNumberInput(event: React.ChangeEvent<HTMLInputElement>) {
+  if (event.target.value === "") {
+    return Number.NaN;
+  }
+
+  return event.target.valueAsNumber;
+}
+
+function formatNumberInputValue(value: number | undefined) {
+  return typeof value === "number" && Number.isFinite(value) ? value : "";
 }
 
 function formatBytes(bytes: number) {
@@ -237,11 +263,11 @@ function SiblingGroup({
                       placeholder="Monthly Salary"
                       type="number"
                       min={0}
-                      value={item.monthlySalary ?? 0}
+                      value={formatNumberInputValue(item.monthlySalary)}
                       disabled={disabled}
                       onChange={(event) => {
                         const next = [...items];
-                        next[index] = { ...item, monthlySalary: Number(event.target.value) };
+                        next[index] = { ...item, monthlySalary: parseNumberInput(event) };
                         setItems(next);
                       }}
                     />
@@ -306,7 +332,7 @@ export function ApplicationV2IntakeForm({
       return initialForm;
     }
 
-    return createDefaultApplicationFormV2({
+    return createEditableDefaultForm({
       fullName: "",
       email: "",
       mobileNumber: "",
@@ -494,7 +520,7 @@ export function ApplicationV2IntakeForm({
         } as PublicSubmitApplicationRequest);
 
         setSuccess("Application submitted successfully.");
-        setForm(createDefaultApplicationFormV2({ fullName: "", email: "", mobileNumber: "" }));
+        setForm(createEditableDefaultForm({ fullName: "", email: "", mobileNumber: "" }));
         setAttachments([]);
       } else {
         await saveDraft();
@@ -566,7 +592,7 @@ export function ApplicationV2IntakeForm({
 
           <div className="space-y-1">
             <label className="text-xs font-medium text-surface-700">Duration of Study (years)</label>
-            <input className="w-full rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" type="number" min={0.5} step="0.5" placeholder="Duration of Study (years)" value={form.personalInfo.studyDurationYears} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, studyDurationYears: Number(event.target.value) } }))} required />
+            <input className="w-full rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" type="number" min={0.5} step="0.5" placeholder="Duration of Study (years)" value={formatNumberInputValue(form.personalInfo.studyDurationYears)} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, studyDurationYears: parseNumberInput(event) } }))} required />
           </div>
 
           <input className="rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" type="tel" placeholder="Mobile Number (+60123456789)" value={form.personalInfo.mobileNumber} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, mobileNumber: event.target.value } }))} required />
@@ -619,12 +645,12 @@ export function ApplicationV2IntakeForm({
             <input className="rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" placeholder="Identification Number" value={form.familyInfo.fatherGuardian.identificationNumber} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, fatherGuardian: { ...prev.familyInfo.fatherGuardian, identificationNumber: event.target.value } } }))} required />
             <div className="space-y-1">
               <label className="text-xs font-medium text-surface-700">Age</label>
-              <input className="w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" type="number" min={18} placeholder="Age" value={form.familyInfo.fatherGuardian.age} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, fatherGuardian: { ...prev.familyInfo.fatherGuardian, age: Number(event.target.value) } } }))} required />
+              <input className="w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" type="number" min={18} placeholder="Age" value={formatNumberInputValue(form.familyInfo.fatherGuardian.age)} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, fatherGuardian: { ...prev.familyInfo.fatherGuardian, age: parseNumberInput(event) } } }))} required />
             </div>
             <input className="rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" placeholder="Contact No" value={form.familyInfo.fatherGuardian.contactNo} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, fatherGuardian: { ...prev.familyInfo.fatherGuardian, contactNo: event.target.value } } }))} required />
             <div className="space-y-1">
               <label className="text-xs font-medium text-surface-700">Monthly Salary (MYR)</label>
-              <input className="w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" type="number" min={0} placeholder="Monthly Salary" value={form.familyInfo.fatherGuardian.monthlySalary} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, fatherGuardian: { ...prev.familyInfo.fatherGuardian, monthlySalary: Number(event.target.value) } } }))} required />
+              <input className="w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" type="number" min={0} placeholder="Monthly Salary" value={formatNumberInputValue(form.familyInfo.fatherGuardian.monthlySalary)} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, fatherGuardian: { ...prev.familyInfo.fatherGuardian, monthlySalary: parseNumberInput(event) } } }))} required />
             </div>
           </div>
           <textarea className="w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" placeholder="Address" value={form.familyInfo.fatherGuardian.address} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, fatherGuardian: { ...prev.familyInfo.fatherGuardian, address: event.target.value } } }))} rows={2} required />
@@ -644,12 +670,12 @@ export function ApplicationV2IntakeForm({
             <input className="rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" placeholder="Identification Number" value={form.familyInfo.motherGuardian.identificationNumber} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, motherGuardian: { ...prev.familyInfo.motherGuardian, identificationNumber: event.target.value } } }))} required />
             <div className="space-y-1">
               <label className="text-xs font-medium text-surface-700">Age</label>
-              <input className="w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" type="number" min={18} placeholder="Age" value={form.familyInfo.motherGuardian.age} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, motherGuardian: { ...prev.familyInfo.motherGuardian, age: Number(event.target.value) } } }))} required />
+              <input className="w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" type="number" min={18} placeholder="Age" value={formatNumberInputValue(form.familyInfo.motherGuardian.age)} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, motherGuardian: { ...prev.familyInfo.motherGuardian, age: parseNumberInput(event) } } }))} required />
             </div>
             <input className="rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" placeholder="Contact No" value={form.familyInfo.motherGuardian.contactNo} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, motherGuardian: { ...prev.familyInfo.motherGuardian, contactNo: event.target.value } } }))} required />
             <div className="space-y-1">
               <label className="text-xs font-medium text-surface-700">Monthly Salary (MYR)</label>
-              <input className="w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" type="number" min={0} placeholder="Monthly Salary" value={form.familyInfo.motherGuardian.monthlySalary} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, motherGuardian: { ...prev.familyInfo.motherGuardian, monthlySalary: Number(event.target.value) } } }))} required />
+              <input className="w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" type="number" min={0} placeholder="Monthly Salary" value={formatNumberInputValue(form.familyInfo.motherGuardian.monthlySalary)} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, motherGuardian: { ...prev.familyInfo.motherGuardian, monthlySalary: parseNumberInput(event) } } }))} required />
             </div>
           </div>
           <textarea className="w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" placeholder="Address" value={form.familyInfo.motherGuardian.address} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, motherGuardian: { ...prev.familyInfo.motherGuardian, address: event.target.value } } }))} rows={2} required />
@@ -799,7 +825,7 @@ export function ApplicationV2IntakeForm({
           <input className="rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" placeholder="Account Number" value={form.financialDeclaration.accountNumber} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, financialDeclaration: { ...prev.financialDeclaration, accountNumber: event.target.value } }))} required />
           <div className="space-y-1">
             <label className="text-xs font-medium text-surface-700">Current MMU Finance Outstanding (MYR)</label>
-            <input className="w-full rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" type="number" min={0} placeholder="Current MMU Finance Outstanding (MYR)" value={form.financialDeclaration.mmuOutstandingInvoiceAmount} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, financialDeclaration: { ...prev.financialDeclaration, mmuOutstandingInvoiceAmount: Number(event.target.value) } }))} required />
+            <input className="w-full rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" type="number" min={0} placeholder="Current MMU Finance Outstanding (MYR)" value={formatNumberInputValue(form.financialDeclaration.mmuOutstandingInvoiceAmount)} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, financialDeclaration: { ...prev.financialDeclaration, mmuOutstandingInvoiceAmount: parseNumberInput(event) } }))} required />
           </div>
         </div>
 

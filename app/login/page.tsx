@@ -1,6 +1,16 @@
-import { LoginForm } from "@/components/login-form";
+import { redirect } from "next/navigation";
 
-export default function LoginPage() {
+import { LoginForm } from "@/components/login-form";
+import { getPostLoginRedirectPath } from "@/lib/auth/redirects";
+import { getSessionUser } from "@/lib/auth/session";
+
+export default async function LoginPage() {
+  const user = await getSessionUser();
+
+  if (user) {
+    redirect(getPostLoginRedirectPath(user.role));
+  }
+
   return (
     <div className="flex min-h-[calc(100vh-16rem)] items-center justify-center">
       <div className="w-full max-w-5xl overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-surface-200 flex flex-col md:flex-row">

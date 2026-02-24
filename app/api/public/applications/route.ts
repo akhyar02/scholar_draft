@@ -1,18 +1,32 @@
-import { HeadObjectCommand } from "@aws-sdk/client-s3";
 import { NextRequest } from "next/server";
 
 import { isValidCampusFacultyCoursePath } from "@/lib/application-options";
 import { getRequiredAttachmentSlots } from "@/lib/application-v2";
 import { isValidCountryCode } from "@/lib/countries";
+import { ALLOWED_DOCUMENT_MIME_TYPES, MAX_DOCUMENT_SIZE_BYTES } from "@/lib/constants";
 import { getDb } from "@/lib/db";
-import { getEnv } from "@/lib/env";
 import { jsonError, jsonOk } from "@/lib/http";
 import { queueAndSendSubmissionEmail } from "@/lib/notifications";
 import { hashPassword } from "@/lib/auth/password";
-import { getS3Client } from "@/lib/s3";
+import { getClientIp, jsonRateLimited, takeRateLimit } from "@/lib/rate-limit";
+import { UploadedObjectValidationError, validateUploadedS3Object } from "@/lib/s3-upload-validation";
 import { publicApplicationSubmitSchema } from "@/lib/validation";
 
 export async function POST(request: NextRequest) {
+  const rateLimit = takeRateLimit({
+    namespace: "public-application-submit",
+    key: getClientIp(request),
+    limit: 5,
+    windowMs: 10 * 60_000,
+  });
+  if (!rateLimit.allowed) {
+    return jsonRateLimited(
+      "RATE_LIMITED",
+      "Too many application submissions. Please try again later.",
+      rateLimit.retryAfterSeconds,
+    );
+  }
+
   const payload = await request.json().catch(() => null);
   const parsed = publicApplicationSubmitSchema.safeParse(payload);
 
@@ -109,17 +123,34 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const env = getEnv();
+  const verifiedAttachments: Array<{
+    slotKey: string;
+    s3Key: string;
+    fileName: string;
+    mimeType: string;
+    sizeBytes: number;
+  }> = [];
   for (const attachment of data.attachments) {
     try {
-      await getS3Client().send(
-        new HeadObjectCommand({
-          Bucket: env.AWS_S3_BUCKET,
-          Key: attachment.s3Key,
-        }),
-      );
-    } catch {
-      return jsonError(400, "OBJECT_NOT_FOUND", `Uploaded file missing for slot: ${attachment.slotKey}`);
+      const verified = await validateUploadedS3Object({
+        s3Key: attachment.s3Key,
+        maxSizeBytes: MAX_DOCUMENT_SIZE_BYTES,
+        allowedMimeTypes: ALLOWED_DOCUMENT_MIME_TYPES,
+        expectedMimeType: attachment.mimeType,
+        expectedSizeBytes: attachment.sizeBytes,
+      });
+
+      verifiedAttachments.push({
+        ...attachment,
+        mimeType: verified.mimeType,
+        sizeBytes: verified.sizeBytes,
+      });
+    } catch (error) {
+      if (error instanceof UploadedObjectValidationError) {
+        return jsonError(400, error.code, `${error.message} (slot: ${attachment.slotKey})`);
+      }
+
+      throw error;
     }
   }
 
@@ -129,75 +160,45 @@ export async function POST(request: NextRequest) {
     .where("email", "=", personalInfo.email)
     .executeTakeFirst();
 
-  if (existingUser?.role === "admin") {
-    return jsonError(409, "EMAIL_NOT_ALLOWED", "This email cannot be used for student applications");
+  if (existingUser) {
+    return jsonError(
+      409,
+      existingUser.role === "admin" ? "EMAIL_NOT_ALLOWED" : "EMAIL_ALREADY_REGISTERED",
+      existingUser.role === "admin"
+        ? "This email cannot be used for student applications"
+        : "An account already exists for this email. Please sign in to submit an application.",
+    );
   }
 
-  const studentUserId = existingUser?.id ?? crypto.randomUUID();
+  const studentUserId = crypto.randomUUID();
 
-  const existingApplication = await db
-    .selectFrom("applications")
-    .select("id")
-    .where("scholarship_id", "=", data.scholarshipId)
-    .where("student_user_id", "=", studentUserId)
-    .executeTakeFirst();
-
-  if (existingApplication) {
-    return jsonError(409, "APPLICATION_EXISTS", "An application already exists for this scholarship");
-  }
-
-  const passwordHash = existingUser ? null : await hashPassword(`${crypto.randomUUID()}-${Date.now()}`);
+  const passwordHash = await hashPassword(`${crypto.randomUUID()}-${Date.now()}`);
   const applicationId = crypto.randomUUID();
 
   await db.transaction().execute(async (trx) => {
-    if (!existingUser) {
-      await trx
-        .insertInto("users")
-        .values({
-          id: studentUserId,
-          email: personalInfo.email,
-          password_hash: passwordHash ?? "",
-          role: "student",
-        })
-        .execute();
-    }
+    await trx
+      .insertInto("users")
+      .values({
+        id: studentUserId,
+        email: personalInfo.email,
+        password_hash: passwordHash,
+        role: "student",
+      })
+      .execute();
 
-    const currentProfile = await trx
-      .selectFrom("student_profiles")
-      .select("user_id")
-      .where("user_id", "=", studentUserId)
-      .executeTakeFirst();
-
-    if (currentProfile) {
-      await trx
-        .updateTable("student_profiles")
-        .set({
-          full_name: personalInfo.fullName,
-          phone: personalInfo.mobileNumber,
-          date_of_birth: null,
-          institution: "MMU",
-          program: courseOption.label,
-          graduation_year: null,
-          gpa: null,
-          updated_at: new Date(),
-        })
-        .where("user_id", "=", studentUserId)
-        .execute();
-    } else {
-      await trx
-        .insertInto("student_profiles")
-        .values({
-          user_id: studentUserId,
-          full_name: personalInfo.fullName,
-          phone: personalInfo.mobileNumber,
-          date_of_birth: null,
-          institution: "MMU",
-          program: courseOption.label,
-          graduation_year: null,
-          gpa: null,
-        })
-        .execute();
-    }
+    await trx
+      .insertInto("student_profiles")
+      .values({
+        user_id: studentUserId,
+        full_name: personalInfo.fullName,
+        phone: personalInfo.mobileNumber,
+        date_of_birth: null,
+        institution: "MMU",
+        program: courseOption.label,
+        graduation_year: null,
+        gpa: null,
+      })
+      .execute();
 
     await trx
       .insertInto("applications")
@@ -224,7 +225,7 @@ export async function POST(request: NextRequest) {
     await trx
       .insertInto("application_attachments")
       .values(
-        data.attachments.map((attachment) => ({
+        verifiedAttachments.map((attachment) => ({
           id: crypto.randomUUID(),
           application_id: applicationId,
           slot_key: attachment.slotKey,

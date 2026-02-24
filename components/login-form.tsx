@@ -1,8 +1,10 @@
 "use client";
 
-import { signIn } from "next-auth/react";
+import { getSession, signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+
+import { getPostLoginRedirectPath } from "@/lib/auth/redirects";
 
 export function LoginForm() {
   const router = useRouter();
@@ -17,7 +19,8 @@ export function LoginForm() {
     setLoading(true);
     setError(null);
 
-    const callbackUrl = searchParams.get("next") || "/";
+    const nextPath = searchParams.get("next");
+    const callbackUrl = nextPath || "/";
 
     const result = await signIn("credentials", {
       email,
@@ -33,7 +36,14 @@ export function LoginForm() {
       return;
     }
 
-    router.push(result.url ?? callbackUrl);
+    if (nextPath) {
+      router.push(result.url ?? nextPath);
+      router.refresh();
+      return;
+    }
+
+    const session = await getSession();
+    router.push(getPostLoginRedirectPath(session?.user?.role));
     router.refresh();
   }
 

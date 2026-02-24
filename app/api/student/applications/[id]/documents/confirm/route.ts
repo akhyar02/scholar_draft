@@ -1,12 +1,11 @@
-import { HeadObjectCommand } from "@aws-sdk/client-s3";
 import { NextRequest } from "next/server";
 
+import { ALLOWED_DOCUMENT_MIME_TYPES, MAX_DOCUMENT_SIZE_BYTES } from "@/lib/constants";
 import { requireApiUser } from "@/lib/api-auth";
 import { getOwnedApplication } from "@/lib/application-service";
 import { getDb } from "@/lib/db";
-import { getEnv } from "@/lib/env";
 import { jsonError, jsonOk } from "@/lib/http";
-import { getS3Client } from "@/lib/s3";
+import { UploadedObjectValidationError, validateUploadedS3Object } from "@/lib/s3-upload-validation";
 import { confirmAttachmentSchema } from "@/lib/validation";
 
 export async function POST(
@@ -40,17 +39,21 @@ export async function POST(
     return jsonError(400, "INVALID_S3_KEY", "Invalid object key for this application");
   }
 
-  const env = getEnv();
-
+  let verifiedObject: { sizeBytes: number; mimeType: string };
   try {
-    await getS3Client().send(
-      new HeadObjectCommand({
-        Bucket: env.AWS_S3_BUCKET,
-        Key: parsed.data.s3Key,
-      }),
-    );
-  } catch {
-    return jsonError(400, "OBJECT_NOT_FOUND", "Uploaded file was not found in S3");
+    verifiedObject = await validateUploadedS3Object({
+      s3Key: parsed.data.s3Key,
+      maxSizeBytes: MAX_DOCUMENT_SIZE_BYTES,
+      allowedMimeTypes: ALLOWED_DOCUMENT_MIME_TYPES,
+      expectedMimeType: parsed.data.mimeType,
+      expectedSizeBytes: parsed.data.sizeBytes,
+    });
+  } catch (error) {
+    if (error instanceof UploadedObjectValidationError) {
+      return jsonError(400, error.code, error.message);
+    }
+
+    throw error;
   }
 
   const db = getDb();
@@ -68,8 +71,8 @@ export async function POST(
       .set({
         s3_key: parsed.data.s3Key,
         original_filename: parsed.data.fileName,
-        mime_type: parsed.data.mimeType,
-        size_bytes: parsed.data.sizeBytes,
+        mime_type: verifiedObject.mimeType,
+        size_bytes: verifiedObject.sizeBytes,
         uploaded_at: new Date(),
       })
       .where("id", "=", existing.id)
@@ -88,8 +91,8 @@ export async function POST(
       slot_key: parsed.data.slotKey,
       s3_key: parsed.data.s3Key,
       original_filename: parsed.data.fileName,
-      mime_type: parsed.data.mimeType,
-      size_bytes: parsed.data.sizeBytes,
+      mime_type: verifiedObject.mimeType,
+      size_bytes: verifiedObject.sizeBytes,
     })
     .execute();
 

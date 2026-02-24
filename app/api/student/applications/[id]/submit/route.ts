@@ -5,9 +5,11 @@ import { getOwnedApplication } from "@/lib/application-service";
 import { getRequiredAttachmentSlots, isApplicationFormV2 } from "@/lib/application-v2";
 import { isValidCampusFacultyCoursePath } from "@/lib/application-options";
 import { isValidCountryCode } from "@/lib/countries";
+import { ALLOWED_DOCUMENT_MIME_TYPES, MAX_DOCUMENT_SIZE_BYTES } from "@/lib/constants";
 import { getDb } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/http";
 import { queueAndSendSubmissionEmail } from "@/lib/notifications";
+import { UploadedObjectValidationError, validateUploadedS3Object } from "@/lib/s3-upload-validation";
 import { applicationFormV2Schema } from "@/lib/validation";
 
 export async function POST(
@@ -48,7 +50,7 @@ export async function POST(
       .executeTakeFirst(),
     db
       .selectFrom("application_attachments")
-      .select(["slot_key"])
+      .select(["slot_key", "s3_key", "mime_type", "size_bytes"])
       .where("application_id", "=", id)
       .execute(),
   ]);
@@ -109,6 +111,24 @@ export async function POST(
   for (const slot of requiredSlots) {
     if (!provided.has(slot)) {
       return jsonError(400, "MISSING_ATTACHMENT", `Missing required attachment: ${slot}`);
+    }
+  }
+
+  for (const attachment of attachments) {
+    try {
+      await validateUploadedS3Object({
+        s3Key: attachment.s3_key,
+        maxSizeBytes: MAX_DOCUMENT_SIZE_BYTES,
+        allowedMimeTypes: ALLOWED_DOCUMENT_MIME_TYPES,
+        expectedMimeType: attachment.mime_type,
+        expectedSizeBytes: attachment.size_bytes,
+      });
+    } catch (error) {
+      if (error instanceof UploadedObjectValidationError) {
+        return jsonError(400, error.code, `${error.message} (slot: ${attachment.slot_key})`);
+      }
+
+      throw error;
     }
   }
 
