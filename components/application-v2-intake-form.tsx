@@ -198,7 +198,7 @@ function UploadField({
   const isUploading = uploadingSlot === slotKey;
 
   return (
-    <div className={`relative flex items-start gap-3 rounded-xl p-4 transition-colors ${
+    <div className={`relative flex items-start gap-3 rounded-xl p-4 transition-colors overflow-hidden ${
       attachment
         ? "bg-success-50 ring-1 ring-success-200"
         : "bg-surface-50 ring-1 ring-surface-200 ring-dashed"
@@ -232,27 +232,43 @@ function UploadField({
         ) : (
           <p className="mt-0.5 text-xs text-surface-400">PDF, JPG or PNG · max 10 MB</p>
         )}
-        <label className={`mt-2 inline-flex cursor-pointer rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors ${
-          disabled || isUploading
-            ? "cursor-not-allowed opacity-50"
-            : attachment
-            ? "bg-white text-surface-700 ring-1 ring-surface-300 hover:bg-surface-50"
-            : "bg-primary-600 text-white hover:bg-primary-500"
-        }`}>
-          {isUploading ? "Uploading…" : attachment ? "Replace" : "Choose File"}
-          <input
-            className="sr-only"
-            type="file"
-            accept=".pdf,.jpg,.jpeg,.png"
-            disabled={disabled || isUploading}
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              if (file) {
-                void onUpload(slotKey, file);
-              }
-            }}
-          />
-        </label>
+        <div className="mt-2 flex items-center gap-2">
+          {attachment ? (
+            <a
+              href={`/api/public/view-file?key=${encodeURIComponent(attachment.s3Key)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-semibold bg-primary-50 text-primary-700 ring-1 ring-primary-200 hover:bg-primary-100 transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="size-3">
+                <path d="M6.22 8.72a.75.75 0 0 0 1.06 1.06l5.22-5.22v1.69a.75.75 0 0 0 1.5 0v-3.5a.75.75 0 0 0-.75-.75h-3.5a.75.75 0 0 0 0 1.5h1.69L6.22 8.72Z" />
+                <path d="M3.5 6.75c0-.69.56-1.25 1.25-1.25h7.5a.75.75 0 0 0 0-1.5h-7.5A2.75 2.75 0 0 0 2 6.75v4.5A2.75 2.75 0 0 0 4.75 14h4.5A2.75 2.75 0 0 0 12 11.25v-7.5a.75.75 0 0 0-1.5 0v7.5c0 .69-.56 1.25-1.25 1.25h-4.5c-.69 0-1.25-.56-1.25-1.25v-4.5Z" />
+              </svg>
+              View
+            </a>
+          ) : null}
+          <label className={`inline-flex cursor-pointer rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors ${
+            disabled || isUploading
+              ? "cursor-not-allowed opacity-50"
+              : attachment
+              ? "bg-white text-surface-700 ring-1 ring-surface-300 hover:bg-surface-50"
+              : "bg-primary-600 text-white hover:bg-primary-500"
+          }`}>
+            {isUploading ? "Uploading…" : attachment ? "Replace" : "Choose File"}
+            <input
+              className="sr-only"
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png"
+              disabled={disabled || isUploading}
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) {
+                  void onUpload(slotKey, file);
+                }
+              }}
+            />
+          </label>
+        </div>
       </div>
     </div>
   );
@@ -853,7 +869,7 @@ export function ApplicationV2IntakeForm({
           <FieldError message={fieldError("personalInfo.address")} />
         </div>
 
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid gap-3 md:grid-cols-2 min-w-0">
           <UploadField label="Student ID Image Proof" slotKey="personal.studentIdProof" attachment={bySlot.get("personal.studentIdProof")} onUpload={uploadAttachment} disabled={!isEditable} uploadingSlot={uploadingSlot} />
           <UploadField label="Latest Semester Result Transcript" slotKey="personal.latestTranscript" attachment={bySlot.get("personal.latestTranscript")} onUpload={uploadAttachment} disabled={!isEditable} uploadingSlot={uploadingSlot} />
         </div>
