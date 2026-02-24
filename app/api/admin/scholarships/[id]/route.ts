@@ -60,7 +60,7 @@ export async function PATCH(
       ...("imageKey" in data ? { image_url: data.imageKey ?? null } : {}),
       ...(typeof data.amount === "number" ? { amount: data.amount } : {}),
       ...(data.currency ? { currency: data.currency } : {}),
-      ...(data.educationLevel ? { education_level: data.educationLevel } : {}),
+      ...("educationLevel" in data ? { education_level: data.educationLevel ?? null } : {}),
       ...(data.eligibilityText ? { eligibility_text: data.eligibilityText } : {}),
       ...(data.deadlineAt ? { deadline_at: new Date(data.deadlineAt) } : {}),
       ...(typeof data.isPublished === "boolean" ? { is_published: data.isPublished } : {}),

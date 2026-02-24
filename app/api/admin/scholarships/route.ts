@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
       image_url: data.imageKey ?? null,
       amount: data.amount,
       currency: data.currency,
-      education_level: data.educationLevel,
+      education_level: data.educationLevel ?? null,
       eligibility_text: data.eligibilityText,
       deadline_at: new Date(data.deadlineAt),
       is_published: data.isPublished,

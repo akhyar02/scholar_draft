@@ -10,6 +10,7 @@ import {
 import { PublicApplicationForm } from "@/components/public-application-form";
 import { getDb } from "@/lib/db";
 import { resolveStoredObjectUrl } from "@/lib/s3-object-url";
+import { formatScholarshipEducationLevel } from "@/lib/scholarships";
 
 export const dynamic = "force-dynamic";
 
@@ -125,7 +126,7 @@ export default async function ScholarshipDetailPage({
                     Education Level
                   </p>
                   <p className="mt-1 text-lg font-semibold text-surface-900">
-                    {scholarship.education_level}
+                    {formatScholarshipEducationLevel(scholarship.education_level)}
                   </p>
                 </div>
               </div>

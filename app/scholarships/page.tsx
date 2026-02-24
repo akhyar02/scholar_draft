@@ -3,6 +3,7 @@ import { Calendar, GraduationCap, Banknote } from "lucide-react";
 
 import { getDb } from "@/lib/db";
 import { resolveStoredObjectUrl } from "@/lib/s3-object-url";
+import { formatScholarshipEducationLevel } from "@/lib/scholarships";
 
 export const dynamic = "force-dynamic";
 
@@ -89,7 +90,7 @@ export default async function ScholarshipsPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <GraduationCap className="h-4 w-4 text-primary-500" />
-                    <span>{scholarship.education_level}</span>
+                    <span>{formatScholarshipEducationLevel(scholarship.education_level)}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-primary-500" />

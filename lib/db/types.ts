@@ -121,7 +121,7 @@ export interface ScholarshipsTable {
   image_url: string | null;
   amount: ColumnType<number, number, number>;
   currency: string;
-  education_level: string;
+  education_level: string | null;
   eligibility_text: string;
   deadline_at: Date;
   is_published: Generated<boolean>;

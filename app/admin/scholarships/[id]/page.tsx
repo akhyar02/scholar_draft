@@ -70,7 +70,7 @@ export default async function EditScholarshipPage({
             imageKey: scholarship.image_url ?? "",
             amount: Number(scholarship.amount).toString(),
             currency: scholarship.currency,
-            educationLevel: scholarship.education_level,
+            educationLevel: scholarship.education_level ?? "",
             eligibilityText: scholarship.eligibility_text,
             deadlineAt: formatDateTimeLocal(scholarship.deadline_at),
             isPublished: scholarship.is_published,

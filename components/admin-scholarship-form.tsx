@@ -40,7 +40,7 @@ const DEFAULT_FORM_VALUES: AdminScholarshipFormValues = {
   imageKey: "",
   amount: "",
   currency: DEFAULT_SCHOLARSHIP_CURRENCY,
-  educationLevel: "Bachelor's Degree (MQF Level 6)",
+  educationLevel: "",
   eligibilityText: "",
   deadlineAt: "",
   isPublished: false,
@@ -140,9 +140,11 @@ export function AdminScholarshipForm({
       }
 
       const normalizedImageKey = form.imageKey.trim();
+      const normalizedEducationLevel = form.educationLevel.trim() || null;
       const payload = {
         ...form,
         imageKey: isEdit ? (normalizedImageKey || null) : (normalizedImageKey || undefined),
+        educationLevel: normalizedEducationLevel,
         amount: Number(form.amount),
         deadlineAt: new Date(form.deadlineAt).toISOString(),
       };
@@ -265,14 +267,13 @@ export function AdminScholarshipForm({
           />
         </div>
         <div className="space-y-1">
-          <label className="text-sm font-medium text-surface-700">Education Level</label>
+          <label className="text-sm font-medium text-surface-700">Education Level (Optional)</label>
           <select
             className="w-full rounded-xl border-0 bg-surface-50 px-4 py-3 text-surface-900 shadow-sm ring-1 ring-inset ring-surface-200 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6 transition-all"
             value={form.educationLevel}
             onChange={(event) => setForm((prev) => ({ ...prev, educationLevel: event.target.value }))}
-            required
           >
-            <option value="">Select education level</option>
+            <option value="">All education levels</option>
             {MALAYSIAN_EDUCATION_LEVELS.map((level) => (
               <option key={level} value={level}>
                 {level}
@@ -281,7 +282,7 @@ export function AdminScholarshipForm({
           </select>
           {hasLegacyEducationLevel ? (
             <p className="text-xs text-warning-700">
-              Existing value is non-standard. Please choose a Malaysian MQF level before saving.
+              Existing value is non-standard. Choose a Malaysian MQF level or leave it as all education levels.
             </p>
           ) : null}
         </div>
