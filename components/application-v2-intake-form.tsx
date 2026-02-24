@@ -23,6 +23,7 @@ import type {
 import { publicApi } from "@/lib/api/services/public-client";
 import { studentApi } from "@/lib/api/services/student-client";
 import { createDefaultApplicationFormV2, isApplicationFormV2 } from "@/lib/application-v2";
+import { applicationFormV2Schema } from "@/lib/validation";
 import type { ApplicationFormPayloadV2, SiblingMemberPayload } from "@/lib/db/types";
 
 type CampusOption = ApplicationOptionsTree["campuses"][number];
@@ -133,6 +134,11 @@ function formatBytes(bytes: number) {
   return `${value >= 10 || index === 0 ? value.toFixed(0) : value.toFixed(1)} ${units[index]}`;
 }
 
+function FieldError({ message }: { message?: string }) {
+  if (!message) return null;
+  return <p className="mt-1 text-xs text-danger-600">{message}</p>;
+}
+
 function UploadField({
   label,
   slotKey,
@@ -189,6 +195,8 @@ function SiblingGroup({
   onUpload,
   disabled,
   uploadingSlot,
+  fieldError,
+  pathPrefix,
 }: {
   title: string;
   category: "above18Working" | "above18NonWorking" | "studyInIpt" | "age7to17" | "age6Below";
@@ -199,6 +207,8 @@ function SiblingGroup({
   onUpload: (slotKey: string, file: File) => Promise<void>;
   disabled: boolean;
   uploadingSlot: string | null;
+  fieldError: (path: string) => string | undefined;
+  pathPrefix: string;
 }) {
   return (
     <div className="space-y-3 rounded-xl bg-white p-4 ring-1 ring-surface-200">
@@ -233,28 +243,34 @@ function SiblingGroup({
                 </button>
               </div>
               <div className="grid gap-3 md:grid-cols-2">
-                <input
-                  className="rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200"
-                  placeholder="Name"
-                  value={item.name}
-                  disabled={disabled}
-                  onChange={(event) => {
-                    const next = [...items];
-                    next[index] = { ...item, name: event.target.value };
-                    setItems(next);
-                  }}
-                />
-                <input
-                  className="rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200"
-                  placeholder="ID Number"
-                  value={item.idNumber}
-                  disabled={disabled}
-                  onChange={(event) => {
-                    const next = [...items];
-                    next[index] = { ...item, idNumber: event.target.value };
-                    setItems(next);
-                  }}
-                />
+                <div className="space-y-1">
+                  <input
+                    className="w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200"
+                    placeholder="Name"
+                    value={item.name}
+                    disabled={disabled}
+                    onChange={(event) => {
+                      const next = [...items];
+                      next[index] = { ...item, name: event.target.value };
+                      setItems(next);
+                    }}
+                  />
+                  <FieldError message={fieldError(`${pathPrefix}.${index}.name`)} />
+                </div>
+                <div className="space-y-1">
+                  <input
+                    className="w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200"
+                    placeholder="ID Number"
+                    value={item.idNumber}
+                    disabled={disabled}
+                    onChange={(event) => {
+                      const next = [...items];
+                      next[index] = { ...item, idNumber: event.target.value };
+                      setItems(next);
+                    }}
+                  />
+                  <FieldError message={fieldError(`${pathPrefix}.${index}.idNumber`)} />
+                </div>
                 {withSalary ? (
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-surface-700">Monthly Salary (MYR)</label>
@@ -271,6 +287,7 @@ function SiblingGroup({
                         setItems(next);
                       }}
                     />
+                    <FieldError message={fieldError(`${pathPrefix}.${index}.monthlySalary`)} />
                   </div>
                 ) : null}
               </div>
@@ -347,6 +364,29 @@ export function ApplicationV2IntakeForm({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  const [touched, setTouched] = useState<Set<string>>(new Set());
+  const [submitted, setSubmitted] = useState(false);
+
+  const validationErrors = useMemo(() => {
+    const result = applicationFormV2Schema.safeParse(form);
+    if (result.success) return new Map<string, string>();
+    const map = new Map<string, string>();
+    for (const issue of result.error.issues) {
+      const key = issue.path.join(".");
+      if (!map.has(key)) map.set(key, issue.message);
+    }
+    return map;
+  }, [form]);
+
+  function markTouched(path: string) {
+    setTouched((prev) => new Set([...prev, path]));
+  }
+
+  function fieldError(path: string): string | undefined {
+    if (!submitted && !touched.has(path)) return undefined;
+    return validationErrors.get(path);
+  }
 
   const bySlot = useMemo(() => toSlotMap(attachments), [attachments]);
 
@@ -503,6 +543,11 @@ export function ApplicationV2IntakeForm({
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setSubmitted(true);
+    if (validationErrors.size > 0) {
+      setError("Please fix the validation errors before submitting.");
+      return;
+    }
     setSubmitting(true);
     setError(null);
     setSuccess(null);
@@ -522,6 +567,8 @@ export function ApplicationV2IntakeForm({
         setSuccess("Application submitted successfully.");
         setForm(createEditableDefaultForm({ fullName: "", email: "", mobileNumber: "" }));
         setAttachments([]);
+        setTouched(new Set());
+        setSubmitted(false);
       } else {
         await saveDraft();
 
@@ -558,70 +605,113 @@ export function ApplicationV2IntakeForm({
       <section className="rounded-lg bg-white p-6 ring-1 ring-surface-200 space-y-4">
         <h3 className="text-lg font-semibold text-surface-900">1. Personal Info</h3>
         <div className="grid gap-4 md:grid-cols-2">
-          <input className="rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" placeholder="Full Name" value={form.personalInfo.fullName} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, fullName: event.target.value } }))} required />
-          <input className="rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" placeholder="Student ID" value={form.personalInfo.studentId} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, studentId: event.target.value } }))} required />
+          <div className="space-y-1">
+            <input className="w-full rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" placeholder="Full Name" value={form.personalInfo.fullName} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, fullName: event.target.value } }))} onBlur={() => markTouched("personalInfo.fullName")} required />
+            <FieldError message={fieldError("personalInfo.fullName")} />
+          </div>
+          <div className="space-y-1">
+            <input className="w-full rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" placeholder="Student ID" value={form.personalInfo.studentId} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, studentId: event.target.value } }))} onBlur={() => markTouched("personalInfo.studentId")} required />
+            <FieldError message={fieldError("personalInfo.studentId")} />
+          </div>
 
-          <select className="rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" value={form.personalInfo.campusOptionId} disabled={!isEditable || optionsLoading} onChange={(event) => setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, campusOptionId: event.target.value, facultyOptionId: "", courseOptionId: "" } }))} required>
-            <option value="">Select Campus</option>
-            {campuses.map((campus) => (
-              <option key={campus.id} value={campus.id}>{campus.label}</option>
-            ))}
-          </select>
+          <div className="space-y-1">
+            <select className="w-full rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" value={form.personalInfo.campusOptionId} disabled={!isEditable || optionsLoading} onChange={(event) => { setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, campusOptionId: event.target.value, facultyOptionId: "", courseOptionId: "" } })); markTouched("personalInfo.campusOptionId"); }} required>
+              <option value="">Select Campus</option>
+              {campuses.map((campus) => (
+                <option key={campus.id} value={campus.id}>{campus.label}</option>
+              ))}
+            </select>
+            <FieldError message={fieldError("personalInfo.campusOptionId")} />
+          </div>
 
-          <select className="rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" value={form.personalInfo.facultyOptionId} disabled={!isEditable || optionsLoading || !selectedCampus} onChange={(event) => setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, facultyOptionId: event.target.value, courseOptionId: "" } }))} required>
-            <option value="">Select Faculty</option>
-            {facultyOptions.map((faculty) => (
-              <option key={faculty.id} value={faculty.id}>{faculty.label}</option>
-            ))}
-          </select>
+          <div className="space-y-1">
+            <select className="w-full rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" value={form.personalInfo.facultyOptionId} disabled={!isEditable || optionsLoading || !selectedCampus} onChange={(event) => { setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, facultyOptionId: event.target.value, courseOptionId: "" } })); markTouched("personalInfo.facultyOptionId"); }} required>
+              <option value="">Select Faculty</option>
+              {facultyOptions.map((faculty) => (
+                <option key={faculty.id} value={faculty.id}>{faculty.label}</option>
+              ))}
+            </select>
+            <FieldError message={fieldError("personalInfo.facultyOptionId")} />
+          </div>
 
-          <select className="rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" value={form.personalInfo.courseOptionId} disabled={!isEditable || optionsLoading || !selectedFaculty} onChange={(event) => setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, courseOptionId: event.target.value } }))} required>
-            <option value="">Select Course Level</option>
-            {courseOptions.map((course) => (
-              <option key={course.id} value={course.id}>{course.label}</option>
-            ))}
-          </select>
+          <div className="space-y-1">
+            <select className="w-full rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" value={form.personalInfo.courseOptionId} disabled={!isEditable || optionsLoading || !selectedFaculty} onChange={(event) => { setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, courseOptionId: event.target.value } })); markTouched("personalInfo.courseOptionId"); }} required>
+              <option value="">Select Course Level</option>
+              {courseOptions.map((course) => (
+                <option key={course.id} value={course.id}>{course.label}</option>
+              ))}
+            </select>
+            <FieldError message={fieldError("personalInfo.courseOptionId")} />
+          </div>
 
-          <select className="rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" value={form.personalInfo.idType} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, idType: event.target.value as "mykad" | "passport" } }))} required>
-            {IDENTIFICATION_TYPES.map((type) => <option key={type} value={type}>{type.toUpperCase()}</option>)}
-          </select>
+          <div className="space-y-1">
+            <select className="w-full rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" value={form.personalInfo.idType} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, idType: event.target.value as "mykad" | "passport" } }))} required>
+              {IDENTIFICATION_TYPES.map((type) => <option key={type} value={type}>{type.toUpperCase()}</option>)}
+            </select>
+          </div>
 
-          <input className="rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" placeholder="ID Number" value={form.personalInfo.idNumber} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, idNumber: event.target.value } }))} required />
+          <div className="space-y-1">
+            <input className="w-full rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" placeholder="ID Number" value={form.personalInfo.idNumber} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, idNumber: event.target.value } }))} onBlur={() => markTouched("personalInfo.idNumber")} required />
+            <FieldError message={fieldError("personalInfo.idNumber")} />
+          </div>
 
-          <input className="rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" placeholder="Current Trimester" value={form.personalInfo.currentTrimester} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, currentTrimester: event.target.value } }))} required />
+          <div className="space-y-1">
+            <input className="w-full rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" placeholder="Current Trimester" value={form.personalInfo.currentTrimester} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, currentTrimester: event.target.value } }))} onBlur={() => markTouched("personalInfo.currentTrimester")} required />
+            <FieldError message={fieldError("personalInfo.currentTrimester")} />
+          </div>
 
           <div className="space-y-1">
             <label className="text-xs font-medium text-surface-700">Duration of Study (years)</label>
-            <input className="w-full rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" type="number" min={0.5} step="0.5" placeholder="Duration of Study (years)" value={formatNumberInputValue(form.personalInfo.studyDurationYears)} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, studyDurationYears: parseNumberInput(event) } }))} required />
+            <input className="w-full rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" type="number" min={0.5} step="0.5" placeholder="Duration of Study (years)" value={formatNumberInputValue(form.personalInfo.studyDurationYears)} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, studyDurationYears: parseNumberInput(event) } }))} onBlur={() => markTouched("personalInfo.studyDurationYears")} required />
+            <FieldError message={fieldError("personalInfo.studyDurationYears")} />
           </div>
 
-          <input className="rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" type="tel" placeholder="Mobile Number (+60123456789)" value={form.personalInfo.mobileNumber} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, mobileNumber: event.target.value } }))} required />
+          <div className="space-y-1">
+            <input className="w-full rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" type="tel" placeholder="Mobile Number (+60123456789)" value={form.personalInfo.mobileNumber} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, mobileNumber: event.target.value } }))} onBlur={() => markTouched("personalInfo.mobileNumber")} required />
+            <FieldError message={fieldError("personalInfo.mobileNumber")} />
+          </div>
 
-          <input className="rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" type="email" placeholder="Email" value={form.personalInfo.email} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, email: event.target.value } }))} required />
+          <div className="space-y-1">
+            <input className="w-full rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" type="email" placeholder="Email" value={form.personalInfo.email} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, email: event.target.value } }))} onBlur={() => markTouched("personalInfo.email")} required />
+            <FieldError message={fieldError("personalInfo.email")} />
+          </div>
 
-          <select className="rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" value={form.personalInfo.gender} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, gender: event.target.value as "male" | "female" } }))} required>
-            {GENDERS.map((gender) => <option key={gender} value={gender}>{gender}</option>)}
-          </select>
+          <div className="space-y-1">
+            <select className="w-full rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" value={form.personalInfo.gender} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, gender: event.target.value as "male" | "female" } }))} required>
+              {GENDERS.map((gender) => <option key={gender} value={gender}>{gender}</option>)}
+            </select>
+          </div>
 
-          <select className="rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" value={form.personalInfo.religion} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, religion: event.target.value as "islam" | "non_islam" } }))} required>
-            {RELIGIONS.map((religion) => <option key={religion} value={religion}>{religion.replace("_", " ")}</option>)}
-          </select>
+          <div className="space-y-1">
+            <select className="w-full rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" value={form.personalInfo.religion} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, religion: event.target.value as "islam" | "non_islam" } }))} required>
+              {RELIGIONS.map((religion) => <option key={religion} value={religion}>{religion.replace("_", " ")}</option>)}
+            </select>
+          </div>
 
-          <select className="rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" value={form.personalInfo.nationality} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, nationality: event.target.value as "malaysian" | "non_malaysian", countryCode: event.target.value === "non_malaysian" ? prev.personalInfo.countryCode : null } }))} required>
-            {NATIONALITIES.map((nationality) => <option key={nationality} value={nationality}>{nationality.replace("_", " ")}</option>)}
-          </select>
+          <div className="space-y-1">
+            <select className="w-full rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" value={form.personalInfo.nationality} disabled={!isEditable} onChange={(event) => { setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, nationality: event.target.value as "malaysian" | "non_malaysian", countryCode: event.target.value === "non_malaysian" ? prev.personalInfo.countryCode : null } })); markTouched("personalInfo.nationality"); }} required>
+              {NATIONALITIES.map((nationality) => <option key={nationality} value={nationality}>{nationality.replace("_", " ")}</option>)}
+            </select>
+            <FieldError message={fieldError("personalInfo.nationality")} />
+          </div>
         </div>
 
         {form.personalInfo.nationality === "non_malaysian" ? (
-          <select className="w-full rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" value={form.personalInfo.countryCode ?? ""} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, countryCode: event.target.value || null } }))} required>
-            <option value="">Select Country</option>
-            {COUNTRIES.map((country) => (
-              <option key={country.code} value={country.code}>{country.name}</option>
-            ))}
-          </select>
+          <div className="space-y-1">
+            <select className="w-full rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" value={form.personalInfo.countryCode ?? ""} disabled={!isEditable} onChange={(event) => { setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, countryCode: event.target.value || null } })); markTouched("personalInfo.countryCode"); }} required>
+              <option value="">Select Country</option>
+              {COUNTRIES.map((country) => (
+                <option key={country.code} value={country.code}>{country.name}</option>
+              ))}
+            </select>
+            <FieldError message={fieldError("personalInfo.countryCode")} />
+          </div>
         ) : null}
 
-        <textarea className="w-full rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" placeholder="Address" value={form.personalInfo.address} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, address: event.target.value } }))} rows={3} required />
+        <div className="space-y-1">
+          <textarea className="w-full rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" placeholder="Address" value={form.personalInfo.address} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, address: event.target.value } }))} onBlur={() => markTouched("personalInfo.address")} rows={3} required />
+          <FieldError message={fieldError("personalInfo.address")} />
+        </div>
 
         <div className="grid gap-3 md:grid-cols-2">
           <UploadField label="Student ID Image Proof" slotKey="personal.studentIdProof" attachment={bySlot.get("personal.studentIdProof")} onUpload={uploadAttachment} disabled={!isEditable} uploadingSlot={uploadingSlot} />
@@ -635,50 +725,86 @@ export function ApplicationV2IntakeForm({
         <div className="space-y-3 rounded-xl bg-surface-50 p-4 ring-1 ring-surface-200">
           <h4 className="text-sm font-semibold text-surface-900">Father / Guardian</h4>
           <div className="grid gap-3 md:grid-cols-2">
-            <input className="rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" placeholder="Name" value={form.familyInfo.fatherGuardian.name} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, fatherGuardian: { ...prev.familyInfo.fatherGuardian, name: event.target.value } } }))} required />
-            <select className="rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" value={form.familyInfo.fatherGuardian.relationship} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, fatherGuardian: { ...prev.familyInfo.fatherGuardian, relationship: event.target.value as "father" | "guardian" } } }))} required>
-              {FATHER_GUARDIAN_RELATIONSHIPS.map((item) => <option key={item} value={item}>{item}</option>)}
-            </select>
-            <select className="rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" value={form.familyInfo.fatherGuardian.identificationType} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, fatherGuardian: { ...prev.familyInfo.fatherGuardian, identificationType: event.target.value as "mykad" | "passport" } } }))} required>
-              {IDENTIFICATION_TYPES.map((item) => <option key={item} value={item}>{item.toUpperCase()}</option>)}
-            </select>
-            <input className="rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" placeholder="Identification Number" value={form.familyInfo.fatherGuardian.identificationNumber} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, fatherGuardian: { ...prev.familyInfo.fatherGuardian, identificationNumber: event.target.value } } }))} required />
+            <div className="space-y-1">
+              <input className="w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" placeholder="Name" value={form.familyInfo.fatherGuardian.name} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, fatherGuardian: { ...prev.familyInfo.fatherGuardian, name: event.target.value } } }))} onBlur={() => markTouched("familyInfo.fatherGuardian.name")} required />
+              <FieldError message={fieldError("familyInfo.fatherGuardian.name")} />
+            </div>
+            <div className="space-y-1">
+              <select className="w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" value={form.familyInfo.fatherGuardian.relationship} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, fatherGuardian: { ...prev.familyInfo.fatherGuardian, relationship: event.target.value as "father" | "guardian" } } }))} required>
+                {FATHER_GUARDIAN_RELATIONSHIPS.map((item) => <option key={item} value={item}>{item}</option>)}
+              </select>
+            </div>
+            <div className="space-y-1">
+              <select className="w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" value={form.familyInfo.fatherGuardian.identificationType} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, fatherGuardian: { ...prev.familyInfo.fatherGuardian, identificationType: event.target.value as "mykad" | "passport" } } }))} required>
+                {IDENTIFICATION_TYPES.map((item) => <option key={item} value={item}>{item.toUpperCase()}</option>)}
+              </select>
+            </div>
+            <div className="space-y-1">
+              <input className="w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" placeholder="Identification Number" value={form.familyInfo.fatherGuardian.identificationNumber} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, fatherGuardian: { ...prev.familyInfo.fatherGuardian, identificationNumber: event.target.value } } }))} onBlur={() => markTouched("familyInfo.fatherGuardian.identificationNumber")} required />
+              <FieldError message={fieldError("familyInfo.fatherGuardian.identificationNumber")} />
+            </div>
             <div className="space-y-1">
               <label className="text-xs font-medium text-surface-700">Age</label>
-              <input className="w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" type="number" min={18} placeholder="Age" value={formatNumberInputValue(form.familyInfo.fatherGuardian.age)} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, fatherGuardian: { ...prev.familyInfo.fatherGuardian, age: parseNumberInput(event) } } }))} required />
+              <input className="w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" type="number" min={18} placeholder="Age" value={formatNumberInputValue(form.familyInfo.fatherGuardian.age)} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, fatherGuardian: { ...prev.familyInfo.fatherGuardian, age: parseNumberInput(event) } } }))} onBlur={() => markTouched("familyInfo.fatherGuardian.age")} required />
+              <FieldError message={fieldError("familyInfo.fatherGuardian.age")} />
             </div>
-            <input className="rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" placeholder="Contact No" value={form.familyInfo.fatherGuardian.contactNo} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, fatherGuardian: { ...prev.familyInfo.fatherGuardian, contactNo: event.target.value } } }))} required />
+            <div className="space-y-1">
+              <input className="w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" placeholder="Contact No (+60123456789)" value={form.familyInfo.fatherGuardian.contactNo} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, fatherGuardian: { ...prev.familyInfo.fatherGuardian, contactNo: event.target.value } } }))} onBlur={() => markTouched("familyInfo.fatherGuardian.contactNo")} required />
+              <FieldError message={fieldError("familyInfo.fatherGuardian.contactNo")} />
+            </div>
             <div className="space-y-1">
               <label className="text-xs font-medium text-surface-700">Monthly Salary (MYR)</label>
-              <input className="w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" type="number" min={0} placeholder="Monthly Salary" value={formatNumberInputValue(form.familyInfo.fatherGuardian.monthlySalary)} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, fatherGuardian: { ...prev.familyInfo.fatherGuardian, monthlySalary: parseNumberInput(event) } } }))} required />
+              <input className="w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" type="number" min={0} placeholder="Monthly Salary" value={formatNumberInputValue(form.familyInfo.fatherGuardian.monthlySalary)} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, fatherGuardian: { ...prev.familyInfo.fatherGuardian, monthlySalary: parseNumberInput(event) } } }))} onBlur={() => markTouched("familyInfo.fatherGuardian.monthlySalary")} required />
+              <FieldError message={fieldError("familyInfo.fatherGuardian.monthlySalary")} />
             </div>
           </div>
-          <textarea className="w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" placeholder="Address" value={form.familyInfo.fatherGuardian.address} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, fatherGuardian: { ...prev.familyInfo.fatherGuardian, address: event.target.value } } }))} rows={2} required />
+          <div className="space-y-1">
+            <textarea className="w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" placeholder="Address" value={form.familyInfo.fatherGuardian.address} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, fatherGuardian: { ...prev.familyInfo.fatherGuardian, address: event.target.value } } }))} onBlur={() => markTouched("familyInfo.fatherGuardian.address")} rows={2} required />
+            <FieldError message={fieldError("familyInfo.fatherGuardian.address")} />
+          </div>
           <UploadField label="Father/Guardian Payslip" slotKey="family.fatherGuardian.payslip" attachment={bySlot.get("family.fatherGuardian.payslip")} onUpload={uploadAttachment} disabled={!isEditable} uploadingSlot={uploadingSlot} />
         </div>
 
         <div className="space-y-3 rounded-xl bg-surface-50 p-4 ring-1 ring-surface-200">
           <h4 className="text-sm font-semibold text-surface-900">Mother / Guardian</h4>
           <div className="grid gap-3 md:grid-cols-2">
-            <input className="rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" placeholder="Name" value={form.familyInfo.motherGuardian.name} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, motherGuardian: { ...prev.familyInfo.motherGuardian, name: event.target.value } } }))} required />
-            <select className="rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" value={form.familyInfo.motherGuardian.relationship} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, motherGuardian: { ...prev.familyInfo.motherGuardian, relationship: event.target.value as "mother" | "guardian" } } }))} required>
-              {MOTHER_GUARDIAN_RELATIONSHIPS.map((item) => <option key={item} value={item}>{item}</option>)}
-            </select>
-            <select className="rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" value={form.familyInfo.motherGuardian.identificationType} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, motherGuardian: { ...prev.familyInfo.motherGuardian, identificationType: event.target.value as "mykad" | "passport" } } }))} required>
-              {IDENTIFICATION_TYPES.map((item) => <option key={item} value={item}>{item.toUpperCase()}</option>)}
-            </select>
-            <input className="rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" placeholder="Identification Number" value={form.familyInfo.motherGuardian.identificationNumber} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, motherGuardian: { ...prev.familyInfo.motherGuardian, identificationNumber: event.target.value } } }))} required />
+            <div className="space-y-1">
+              <input className="w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" placeholder="Name" value={form.familyInfo.motherGuardian.name} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, motherGuardian: { ...prev.familyInfo.motherGuardian, name: event.target.value } } }))} onBlur={() => markTouched("familyInfo.motherGuardian.name")} required />
+              <FieldError message={fieldError("familyInfo.motherGuardian.name")} />
+            </div>
+            <div className="space-y-1">
+              <select className="w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" value={form.familyInfo.motherGuardian.relationship} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, motherGuardian: { ...prev.familyInfo.motherGuardian, relationship: event.target.value as "mother" | "guardian" } } }))} required>
+                {MOTHER_GUARDIAN_RELATIONSHIPS.map((item) => <option key={item} value={item}>{item}</option>)}
+              </select>
+            </div>
+            <div className="space-y-1">
+              <select className="w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" value={form.familyInfo.motherGuardian.identificationType} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, motherGuardian: { ...prev.familyInfo.motherGuardian, identificationType: event.target.value as "mykad" | "passport" } } }))} required>
+                {IDENTIFICATION_TYPES.map((item) => <option key={item} value={item}>{item.toUpperCase()}</option>)}
+              </select>
+            </div>
+            <div className="space-y-1">
+              <input className="w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" placeholder="Identification Number" value={form.familyInfo.motherGuardian.identificationNumber} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, motherGuardian: { ...prev.familyInfo.motherGuardian, identificationNumber: event.target.value } } }))} onBlur={() => markTouched("familyInfo.motherGuardian.identificationNumber")} required />
+              <FieldError message={fieldError("familyInfo.motherGuardian.identificationNumber")} />
+            </div>
             <div className="space-y-1">
               <label className="text-xs font-medium text-surface-700">Age</label>
-              <input className="w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" type="number" min={18} placeholder="Age" value={formatNumberInputValue(form.familyInfo.motherGuardian.age)} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, motherGuardian: { ...prev.familyInfo.motherGuardian, age: parseNumberInput(event) } } }))} required />
+              <input className="w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" type="number" min={18} placeholder="Age" value={formatNumberInputValue(form.familyInfo.motherGuardian.age)} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, motherGuardian: { ...prev.familyInfo.motherGuardian, age: parseNumberInput(event) } } }))} onBlur={() => markTouched("familyInfo.motherGuardian.age")} required />
+              <FieldError message={fieldError("familyInfo.motherGuardian.age")} />
             </div>
-            <input className="rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" placeholder="Contact No" value={form.familyInfo.motherGuardian.contactNo} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, motherGuardian: { ...prev.familyInfo.motherGuardian, contactNo: event.target.value } } }))} required />
+            <div className="space-y-1">
+              <input className="w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" placeholder="Contact No (+60123456789)" value={form.familyInfo.motherGuardian.contactNo} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, motherGuardian: { ...prev.familyInfo.motherGuardian, contactNo: event.target.value } } }))} onBlur={() => markTouched("familyInfo.motherGuardian.contactNo")} required />
+              <FieldError message={fieldError("familyInfo.motherGuardian.contactNo")} />
+            </div>
             <div className="space-y-1">
               <label className="text-xs font-medium text-surface-700">Monthly Salary (MYR)</label>
-              <input className="w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" type="number" min={0} placeholder="Monthly Salary" value={formatNumberInputValue(form.familyInfo.motherGuardian.monthlySalary)} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, motherGuardian: { ...prev.familyInfo.motherGuardian, monthlySalary: parseNumberInput(event) } } }))} required />
+              <input className="w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" type="number" min={0} placeholder="Monthly Salary" value={formatNumberInputValue(form.familyInfo.motherGuardian.monthlySalary)} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, motherGuardian: { ...prev.familyInfo.motherGuardian, monthlySalary: parseNumberInput(event) } } }))} onBlur={() => markTouched("familyInfo.motherGuardian.monthlySalary")} required />
+              <FieldError message={fieldError("familyInfo.motherGuardian.monthlySalary")} />
             </div>
           </div>
-          <textarea className="w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" placeholder="Address" value={form.familyInfo.motherGuardian.address} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, motherGuardian: { ...prev.familyInfo.motherGuardian, address: event.target.value } } }))} rows={2} required />
+          <div className="space-y-1">
+            <textarea className="w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-surface-200" placeholder="Address" value={form.familyInfo.motherGuardian.address} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, familyInfo: { ...prev.familyInfo, motherGuardian: { ...prev.familyInfo.motherGuardian, address: event.target.value } } }))} onBlur={() => markTouched("familyInfo.motherGuardian.address")} rows={2} required />
+            <FieldError message={fieldError("familyInfo.motherGuardian.address")} />
+          </div>
           <UploadField label="Mother/Guardian Payslip" slotKey="family.motherGuardian.payslip" attachment={bySlot.get("family.motherGuardian.payslip")} onUpload={uploadAttachment} disabled={!isEditable} uploadingSlot={uploadingSlot} />
         </div>
       </section>
@@ -696,6 +822,8 @@ export function ApplicationV2IntakeForm({
           onUpload={uploadAttachment}
           disabled={!isEditable}
           uploadingSlot={uploadingSlot}
+          fieldError={fieldError}
+          pathPrefix="familyInfo.siblings.above18Working"
         />
 
         <SiblingGroup
@@ -708,6 +836,8 @@ export function ApplicationV2IntakeForm({
           onUpload={uploadAttachment}
           disabled={!isEditable}
           uploadingSlot={uploadingSlot}
+          fieldError={fieldError}
+          pathPrefix="familyInfo.siblings.above18NonWorking"
         />
 
         <SiblingGroup
@@ -720,6 +850,8 @@ export function ApplicationV2IntakeForm({
           onUpload={uploadAttachment}
           disabled={!isEditable}
           uploadingSlot={uploadingSlot}
+          fieldError={fieldError}
+          pathPrefix="familyInfo.siblings.studyInIpt"
         />
 
         <SiblingGroup
@@ -732,6 +864,8 @@ export function ApplicationV2IntakeForm({
           onUpload={uploadAttachment}
           disabled={!isEditable}
           uploadingSlot={uploadingSlot}
+          fieldError={fieldError}
+          pathPrefix="familyInfo.siblings.age7to17"
         />
 
         <SiblingGroup
@@ -744,6 +878,8 @@ export function ApplicationV2IntakeForm({
           onUpload={uploadAttachment}
           disabled={!isEditable}
           uploadingSlot={uploadingSlot}
+          fieldError={fieldError}
+          pathPrefix="familyInfo.siblings.age6Below"
         />
 
         <div className="space-y-3 rounded-xl bg-surface-50 p-4 ring-1 ring-surface-200">
@@ -821,11 +957,18 @@ export function ApplicationV2IntakeForm({
       <section className="rounded-lg bg-white p-6 ring-1 ring-surface-200 space-y-4">
         <h3 className="text-lg font-semibold text-surface-900">4. Financial Declaration</h3>
         <div className="grid gap-4 md:grid-cols-2">
-          <input className="rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" placeholder="Bank Name" value={form.financialDeclaration.bankName} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, financialDeclaration: { ...prev.financialDeclaration, bankName: event.target.value } }))} required />
-          <input className="rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" placeholder="Account Number" value={form.financialDeclaration.accountNumber} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, financialDeclaration: { ...prev.financialDeclaration, accountNumber: event.target.value } }))} required />
+          <div className="space-y-1">
+            <input className="w-full rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" placeholder="Bank Name" value={form.financialDeclaration.bankName} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, financialDeclaration: { ...prev.financialDeclaration, bankName: event.target.value } }))} onBlur={() => markTouched("financialDeclaration.bankName")} required />
+            <FieldError message={fieldError("financialDeclaration.bankName")} />
+          </div>
+          <div className="space-y-1">
+            <input className="w-full rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" placeholder="Account Number" value={form.financialDeclaration.accountNumber} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, financialDeclaration: { ...prev.financialDeclaration, accountNumber: event.target.value } }))} onBlur={() => markTouched("financialDeclaration.accountNumber")} required />
+            <FieldError message={fieldError("financialDeclaration.accountNumber")} />
+          </div>
           <div className="space-y-1">
             <label className="text-xs font-medium text-surface-700">Current MMU Finance Outstanding (MYR)</label>
-            <input className="w-full rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" type="number" min={0} placeholder="Current MMU Finance Outstanding (MYR)" value={formatNumberInputValue(form.financialDeclaration.mmuOutstandingInvoiceAmount)} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, financialDeclaration: { ...prev.financialDeclaration, mmuOutstandingInvoiceAmount: parseNumberInput(event) } }))} required />
+            <input className="w-full rounded-xl border-0 bg-surface-50 px-4 py-3 ring-1 ring-surface-200" type="number" min={0} placeholder="Current MMU Finance Outstanding (MYR)" value={formatNumberInputValue(form.financialDeclaration.mmuOutstandingInvoiceAmount)} disabled={!isEditable} onChange={(event) => setForm((prev) => ({ ...prev, financialDeclaration: { ...prev.financialDeclaration, mmuOutstandingInvoiceAmount: parseNumberInput(event) } }))} onBlur={() => markTouched("financialDeclaration.mmuOutstandingInvoiceAmount")} required />
+            <FieldError message={fieldError("financialDeclaration.mmuOutstandingInvoiceAmount")} />
           </div>
         </div>
 
@@ -893,6 +1036,7 @@ export function ApplicationV2IntakeForm({
                 );
               })}
             </div>
+            <FieldError message={fieldError("financialDeclaration.supportProviderOptionIds")} />
 
             <div className="space-y-2">
               {form.financialDeclaration.supportProviderOptionIds.map((providerId) => {
