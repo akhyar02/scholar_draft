@@ -1,7 +1,10 @@
 import Link from "next/link";
-import { Search, FileText, CheckCircle, GraduationCap, ArrowRight, Sparkles } from "lucide-react";
+import { Search, FileText, CheckCircle, GraduationCap, ArrowRight, Sparkles, LogIn } from "lucide-react";
 
-export default function HomePage() {
+import { getSessionUser } from "@/lib/auth/session";
+
+export default async function HomePage() {
+  const user = await getSessionUser();
   return (
     <div className="space-y-28 pb-16">
       {/* Hero Section */}
@@ -42,6 +45,15 @@ export default function HomePage() {
                 Browse Scholarships
                 <ArrowRight className="h-5 w-5" />
               </Link>
+              {!user && (
+                <Link
+                  className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-8 py-4 text-base font-semibold text-white backdrop-blur-sm transition-all hover:bg-white/10 hover:border-white/30"
+                  href="/login"
+                >
+                  <LogIn className="h-5 w-5" />
+                  Sign In
+                </Link>
+              )}
 
             </div>
           </div>

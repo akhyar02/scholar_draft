@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Poppins } from "next/font/google";
-import { Heart } from "lucide-react";
+import { Heart, LogIn } from "lucide-react";
 
 import { getSessionUser } from "@/lib/auth/session";
 import { NavLink } from "@/components/nav-link";
@@ -73,7 +73,15 @@ export default async function RootLayout({
                   </span>
                   <LogoutButton />
                 </div>
-              ) : null}
+              ) : (
+                <Link
+                  href="/login"
+                  className="hidden md:inline-flex items-center gap-2 rounded-xl bg-white/10 px-5 py-2 text-sm font-semibold text-white backdrop-blur-sm ring-1 ring-white/20 transition-all hover:bg-white/20 hover:ring-white/30"
+                >
+                  <LogIn className="h-4 w-4" />
+                  Sign In
+                </Link>
+              )}
               <MobileNav user={user} />
             </div>
           </div>
@@ -107,6 +115,14 @@ export default async function RootLayout({
                   >
                     Browse Scholarships
                   </Link>
+                  {!user && (
+                    <Link
+                      href="/login"
+                      className="text-sm text-surface-400 hover:text-white transition-colors"
+                    >
+                      Sign In
+                    </Link>
+                  )}
                 </div>
               </div>
               <div className="space-y-4">

@@ -110,6 +110,40 @@ function createEditableDefaultForm(params: {
   return form;
 }
 
+function formatErrorMessage(err: unknown, fallback: string): string {
+  if (err && typeof err === "object" && "issues" in err && Array.isArray((err as { issues: unknown[] }).issues)) {
+    const issues = (err as { issues: { path?: (string | number)[]; message?: string }[] }).issues;
+    const messages = issues
+      .map((issue) => {
+        const field = issue.path?.length ? issue.path.join(" → ") : undefined;
+        return field ? `${field}: ${issue.message}` : issue.message;
+      })
+      .filter(Boolean);
+    return messages.length > 0 ? messages.join(". ") : fallback;
+  }
+
+  if (err instanceof Error) {
+    // ZodError.message is a JSON string of the issues array — try to parse and format it
+    try {
+      const parsed = JSON.parse(err.message);
+      if (Array.isArray(parsed)) {
+        const messages = parsed
+          .map((issue: { path?: (string | number)[]; message?: string }) => {
+            const field = issue.path?.length ? issue.path.join(" → ") : undefined;
+            return field ? `${field}: ${issue.message}` : issue.message;
+          })
+          .filter(Boolean);
+        if (messages.length > 0) return messages.join(". ");
+      }
+    } catch {
+      // Not JSON — use the message as-is
+    }
+    return err.message;
+  }
+
+  return fallback;
+}
+
 function parseNumberInput(event: React.ChangeEvent<HTMLInputElement>) {
   if (event.target.value === "") {
     return Number.NaN;
@@ -471,7 +505,7 @@ export function ApplicationV2IntakeForm({
         }
       } catch (err) {
         if (mounted) {
-          setError(err instanceof Error ? err.message : "Failed to load application options");
+          setError(formatErrorMessage(err, "Failed to load application options"));
         }
       } finally {
         if (mounted) {
@@ -570,7 +604,7 @@ export function ApplicationV2IntakeForm({
         return next;
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Attachment upload failed");
+      setError(formatErrorMessage(err, "Attachment upload failed"));
     } finally {
       setUploadingSlot(null);
     }
@@ -593,7 +627,7 @@ export function ApplicationV2IntakeForm({
       setSuccess("Draft saved.");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save draft");
+      setError(formatErrorMessage(err, "Failed to save draft"));
     } finally {
       setSaving(false);
     }
@@ -640,7 +674,7 @@ export function ApplicationV2IntakeForm({
         router.refresh();
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Application submission failed");
+      setError(formatErrorMessage(err, "Application submission failed"));
     } finally {
       setSubmitting(false);
     }

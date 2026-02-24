@@ -86,7 +86,13 @@ export function MobileNav({ user }: { user: any }) {
                 <LogoutButton />
               </div>
             </div>
-          ) : null}
+          ) : (
+            <div className="mt-4 pt-4 border-t border-white/10">
+              <MobileNavLink href="/login" onClick={closeMenu}>
+                Sign In
+              </MobileNavLink>
+            </div>
+          )}
         </div>
       )}
     </div>

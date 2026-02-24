@@ -11,6 +11,8 @@ import {
 
 import { PublicApplicationForm } from "@/components/public-application-form";
 import { getDb } from "@/lib/db";
+import { getSessionUser } from "@/lib/auth/session";
+import { isApplicationFormV2 } from "@/lib/application-v2";
 import { resolveStoredObjectUrl } from "@/lib/s3-object-url";
 import { formatScholarshipEducationLevel } from "@/lib/scholarships";
 
@@ -40,6 +42,87 @@ export default async function ScholarshipDetailPage({
   const imageUrl =
     resolvedImageUrl ??
     "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=2070&auto=format&fit=crop";
+
+  /* ── Prefill from the logged-in student's latest application ─────── */
+  let prefillForm: unknown = undefined;
+  let prefillAttachments: { slot_key: string; s3_key: string; original_filename: string; mime_type: string; size_bytes: number }[] = [];
+  const user = await getSessionUser();
+  let prefillSourceAppId: string | undefined;
+
+  if (user?.role === "student") {
+    // 1. Check if this student already has an application for THIS scholarship
+    const existingApp = await db
+      .selectFrom("applications")
+      .select("id")
+      .where("scholarship_id", "=", scholarship.id)
+      .where("student_user_id", "=", user.id)
+      .executeTakeFirst();
+
+    if (existingApp) {
+      const existingFormData = await db
+        .selectFrom("application_form_data")
+        .select("payload")
+        .where("application_id", "=", existingApp.id)
+        .executeTakeFirst();
+
+      if (existingFormData && isApplicationFormV2(existingFormData.payload)) {
+        prefillForm = existingFormData.payload;
+        prefillSourceAppId = existingApp.id;
+      }
+    }
+
+    // 2. If no existing application for this scholarship, try the most recent V2 application
+    if (!prefillForm) {
+      const latestApp = await db
+        .selectFrom("applications")
+        .select("id")
+        .where("student_user_id", "=", user.id)
+        .orderBy("created_at", "desc")
+        .executeTakeFirst();
+
+      if (latestApp) {
+        const latestFormData = await db
+          .selectFrom("application_form_data")
+          .select("payload")
+          .where("application_id", "=", latestApp.id)
+          .executeTakeFirst();
+
+        if (latestFormData && isApplicationFormV2(latestFormData.payload)) {
+          prefillForm = latestFormData.payload;
+          prefillSourceAppId = latestApp.id;
+        }
+      }
+    }
+
+    // 3. Fallback: prefill from student profile
+    if (!prefillForm) {
+      const profile = await db
+        .selectFrom("student_profiles")
+        .selectAll()
+        .where("user_id", "=", user.id)
+        .executeTakeFirst();
+
+      if (profile) {
+        prefillForm = {
+          schemaVersion: 2,
+          personalInfo: {
+            fullName: profile.full_name,
+            email: user.email,
+            mobileNumber: profile.phone,
+          },
+        };
+      }
+    }
+
+    // Fetch attachments from the source application
+    if (prefillSourceAppId) {
+      prefillAttachments = await db
+        .selectFrom("application_attachments")
+        .select(["slot_key", "s3_key", "original_filename", "mime_type", "size_bytes"])
+        .where("application_id", "=", prefillSourceAppId)
+        .execute();
+    }
+  }
 
   return (
     <div className="space-y-10 pb-16 animate-fade-in-up">
@@ -189,7 +272,11 @@ export default async function ScholarshipDetailPage({
           </p>
           <div className="mt-8">
             {isOpen ? (
-              <PublicApplicationForm scholarshipId={scholarship.id} />
+              <PublicApplicationForm
+                scholarshipId={scholarship.id}
+                initialForm={prefillForm}
+                initialAttachments={prefillAttachments}
+              />
             ) : (
               <div className="rounded-2xl bg-danger-50/80 p-6 text-center ring-1 ring-danger-100">
                 <p className="font-bold text-danger-700">
