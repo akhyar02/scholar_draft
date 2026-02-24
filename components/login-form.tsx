@@ -92,6 +92,15 @@ export function LoginForm() {
       >
         {loading ? "Signing in..." : "Sign in"}
       </button>
+
+      <div className="mt-4 text-center">
+        <a
+          href="/forgot-password"
+          className="text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors"
+        >
+          Forgot your password?
+        </a>
+      </div>
     </form>
   );
 }

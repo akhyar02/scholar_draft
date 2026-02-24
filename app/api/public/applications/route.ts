@@ -3,13 +3,23 @@ import { NextRequest } from "next/server";
 import { isValidCampusFacultyCoursePath } from "@/lib/application-options";
 import { getRequiredAttachmentSlots } from "@/lib/application-v2";
 import { isValidCountryCode } from "@/lib/countries";
-import { ALLOWED_DOCUMENT_MIME_TYPES, MAX_DOCUMENT_SIZE_BYTES } from "@/lib/constants";
+import {
+  ALLOWED_DOCUMENT_MIME_TYPES,
+  MAX_DOCUMENT_SIZE_BYTES,
+} from "@/lib/constants";
 import { getDb } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/http";
 import { queueAndSendSubmissionEmail } from "@/lib/notifications";
 import { hashPassword } from "@/lib/auth/password";
+import {
+  generateReadablePassword,
+  createPasswordToken,
+} from "@/lib/auth/password-token";
 import { getClientIp, jsonRateLimited, takeRateLimit } from "@/lib/rate-limit";
-import { UploadedObjectValidationError, validateUploadedS3Object } from "@/lib/s3-upload-validation";
+import {
+  UploadedObjectValidationError,
+  validateUploadedS3Object,
+} from "@/lib/s3-upload-validation";
 import { publicApplicationSubmitSchema } from "@/lib/validation";
 
 export async function POST(request: NextRequest) {
@@ -31,7 +41,11 @@ export async function POST(request: NextRequest) {
   const parsed = publicApplicationSubmitSchema.safeParse(payload);
 
   if (!parsed.success) {
-    return jsonError(400, "INVALID_PAYLOAD", parsed.error.issues[0]?.message ?? "Invalid request body");
+    return jsonError(
+      400,
+      "INVALID_PAYLOAD",
+      parsed.error.issues[0]?.message ?? "Invalid request body",
+    );
   }
 
   const data = parsed.data;
@@ -53,7 +67,10 @@ export async function POST(request: NextRequest) {
 
   const { personalInfo, financialDeclaration } = data.form;
 
-  if (personalInfo.nationality === "non_malaysian" && personalInfo.countryCode) {
+  if (
+    personalInfo.nationality === "non_malaysian" &&
+    personalInfo.countryCode
+  ) {
     if (!isValidCountryCode(personalInfo.countryCode)) {
       return jsonError(400, "INVALID_COUNTRY", "Country code is invalid");
     }
@@ -66,7 +83,11 @@ export async function POST(request: NextRequest) {
     db,
   );
   if (!validPath) {
-    return jsonError(400, "INVALID_PATH", "Invalid campus/faculty/course combination");
+    return jsonError(
+      400,
+      "INVALID_PATH",
+      "Invalid campus/faculty/course combination",
+    );
   }
 
   const courseOption = await db
@@ -81,7 +102,9 @@ export async function POST(request: NextRequest) {
     return jsonError(400, "INVALID_COURSE", "Selected course is not available");
   }
 
-  const supportProviderIds = [...new Set(financialDeclaration.supportProviderOptionIds)];
+  const supportProviderIds = [
+    ...new Set(financialDeclaration.supportProviderOptionIds),
+  ];
 
   if (financialDeclaration.receivingOtherSupport) {
     const providers = await db
@@ -93,13 +116,23 @@ export async function POST(request: NextRequest) {
       .execute();
 
     if (providers.length !== supportProviderIds.length) {
-      return jsonError(400, "INVALID_SUPPORT_PROVIDER", "One or more support providers are invalid");
+      return jsonError(
+        400,
+        "INVALID_SUPPORT_PROVIDER",
+        "One or more support providers are invalid",
+      );
     }
   }
 
-  const attachmentMap = new Map(data.attachments.map((item) => [item.slotKey, item]));
+  const attachmentMap = new Map(
+    data.attachments.map((item) => [item.slotKey, item]),
+  );
   if (attachmentMap.size !== data.attachments.length) {
-    return jsonError(400, "DUPLICATE_ATTACHMENT", "Duplicate attachment slots are not allowed");
+    return jsonError(
+      400,
+      "DUPLICATE_ATTACHMENT",
+      "Duplicate attachment slots are not allowed",
+    );
   }
 
   const normalizedForm = {
@@ -113,12 +146,18 @@ export async function POST(request: NextRequest) {
   const requiredSlots = getRequiredAttachmentSlots(normalizedForm);
   for (const slot of requiredSlots) {
     if (!attachmentMap.has(slot)) {
-      return jsonError(400, "MISSING_ATTACHMENT", `Missing required attachment: ${slot}`);
+      return jsonError(
+        400,
+        "MISSING_ATTACHMENT",
+        `Missing required attachment: ${slot}`,
+      );
     }
   }
 
   for (const attachment of data.attachments) {
-    if (!attachment.s3Key.startsWith(`public-applications/${data.scholarshipId}/`)) {
+    if (
+      !attachment.s3Key.startsWith(`public-applications/${data.scholarshipId}/`)
+    ) {
       return jsonError(400, "INVALID_S3_KEY", "Invalid document key prefix");
     }
   }
@@ -147,7 +186,11 @@ export async function POST(request: NextRequest) {
       });
     } catch (error) {
       if (error instanceof UploadedObjectValidationError) {
-        return jsonError(400, error.code, `${error.message} (slot: ${attachment.slotKey})`);
+        return jsonError(
+          400,
+          error.code,
+          `${error.message} (slot: ${attachment.slotKey})`,
+        );
       }
 
       throw error;
@@ -163,7 +206,9 @@ export async function POST(request: NextRequest) {
   if (existingUser) {
     return jsonError(
       409,
-      existingUser.role === "admin" ? "EMAIL_NOT_ALLOWED" : "EMAIL_ALREADY_REGISTERED",
+      existingUser.role === "admin"
+        ? "EMAIL_NOT_ALLOWED"
+        : "EMAIL_ALREADY_REGISTERED",
       existingUser.role === "admin"
         ? "This email cannot be used for student applications"
         : "An account already exists for this email. Please sign in to submit an application.",
@@ -172,7 +217,8 @@ export async function POST(request: NextRequest) {
 
   const studentUserId = crypto.randomUUID();
 
-  const passwordHash = await hashPassword(`${crypto.randomUUID()}-${Date.now()}`);
+  const tempPassword = generateReadablePassword();
+  const passwordHash = await hashPassword(tempPassword);
   const applicationId = crypto.randomUUID();
 
   await db.transaction().execute(async (trx) => {
@@ -250,10 +296,16 @@ export async function POST(request: NextRequest) {
       .execute();
   });
 
+  const rawToken = await createPasswordToken(studentUserId);
+  const baseUrl = process.env.NEXTAUTH_URL ?? "https://scholarhub.yum.edu.my";
+  const setPasswordUrl = `${baseUrl}/set-password?token=${rawToken}`;
+
   await queueAndSendSubmissionEmail({
     applicationId,
     recipientEmail: personalInfo.email,
     scholarshipTitle: scholarship.title,
+    tempPassword,
+    setPasswordUrl,
   });
 
   return jsonOk({ success: true, applicationId }, { status: 201 });

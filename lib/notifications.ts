@@ -192,7 +192,16 @@ function buildStatusEmail({
   };
 }
 
-function buildSubmissionEmail({ scholarshipTitle }: { scholarshipTitle: string }) {
+function buildSubmissionEmail({
+  scholarshipTitle,
+  tempPassword,
+  setPasswordUrl,
+}: {
+  scholarshipTitle: string;
+  tempPassword: string;
+  setPasswordUrl: string;
+}) {
+  const baseUrl = getEnv().NEXTAUTH_URL ?? "https://scholarhub.yum.edu.my";
   const bodyContent = `
     <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1c1917;">
       Application Submitted! 🎓
@@ -221,6 +230,42 @@ function buildSubmissionEmail({ scholarshipTitle }: { scholarshipTitle: string }
           <p style="margin:0;font-size:14px;color:#57534e;line-height:1.5;">
             We've received your application and it's now being processed. You'll be notified when the review begins.
           </p>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Account credentials -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+      <tr>
+        <td style="background-color:#eff6ff;border-radius:12px;padding:20px;border:1px solid #bfdbfe;">
+          <p style="margin:0 0 12px;font-size:14px;font-weight:600;color:#1e40af;">🔑 Your Account Credentials</p>
+          <p style="margin:0 0 8px;font-size:13px;color:#1e3a5f;line-height:1.6;">
+            An account has been created for you to track your application. You can log in immediately with this temporary password:
+          </p>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:12px;">
+            <tr>
+              <td style="background-color:#ffffff;border-radius:8px;padding:12px 16px;border:1px dashed #93c5fd;text-align:center;">
+                <p style="margin:0 0 2px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6b7280;">Temporary Password</p>
+                <p style="margin:0;font-size:18px;font-weight:700;color:#1e40af;font-family:'Courier New',monospace;letter-spacing:0.05em;">${tempPassword}</p>
+              </td>
+            </tr>
+          </table>
+          <p style="margin:0;font-size:13px;color:#1e3a5f;line-height:1.5;">
+            For security, we recommend setting your own password:
+          </p>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Set Password CTA -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+      <tr>
+        <td align="center">
+          <a href="${setPasswordUrl}"
+             style="display:inline-block;background-color:#1e40af;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;padding:14px 32px;border-radius:12px;">
+            🔐 Set Your Own Password
+          </a>
+          <p style="margin:8px 0 0;font-size:12px;color:#9ca3af;">This link expires in 72 hours</p>
         </td>
       </tr>
     </table>
@@ -255,7 +300,7 @@ function buildSubmissionEmail({ scholarshipTitle }: { scholarshipTitle: string }
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
       <tr>
         <td align="center" style="padding-top:8px;">
-          <a href="${getEnv().NEXTAUTH_URL ?? "https://scholarhub.yum.edu.my"}/student/applications"
+          <a href="${baseUrl}/student/applications"
              style="display:inline-block;background-color:#be123c;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;padding:12px 28px;border-radius:12px;">
             View My Applications
           </a>
@@ -265,9 +310,9 @@ function buildSubmissionEmail({ scholarshipTitle }: { scholarshipTitle: string }
   `;
 
   return {
-    subject: "Application submitted successfully",
+    subject: "Application submitted — here are your login credentials",
     html: wrapInEmailLayout(bodyContent),
-    text: `We received your application for ${scholarshipTitle}. Our team will review it and you'll receive email updates on any status changes.`,
+    text: `We received your application for ${scholarshipTitle}. Your temporary password is: ${tempPassword}. Set your own password here: ${setPasswordUrl}`,
   };
 }
 
@@ -275,11 +320,17 @@ export async function queueAndSendSubmissionEmail(params: {
   applicationId: string;
   recipientEmail: string;
   scholarshipTitle: string;
+  tempPassword: string;
+  setPasswordUrl: string;
 }) {
   return queueAndSendEmail({
     ...params,
     templateKey: "application_submitted",
-    content: buildSubmissionEmail({ scholarshipTitle: params.scholarshipTitle }),
+    content: buildSubmissionEmail({
+      scholarshipTitle: params.scholarshipTitle,
+      tempPassword: params.tempPassword,
+      setPasswordUrl: params.setPasswordUrl,
+    }),
   });
 }
 
@@ -293,6 +344,70 @@ export async function queueAndSendStatusEmail(params: {
     ...params,
     templateKey: `application_status_${params.status}`,
     content: buildStatusEmail({ scholarshipTitle: params.scholarshipTitle, status: params.status }),
+  });
+}
+
+/* ------------------------------------------------------------------ */
+/*  Password reset email                                               */
+/* ------------------------------------------------------------------ */
+
+function buildPasswordResetEmail({ resetUrl }: { resetUrl: string }) {
+  const bodyContent = `
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1c1917;">
+      Reset Your Password
+    </h1>
+    <p style="margin:0 0 24px;font-size:15px;color:#78716c;line-height:1.6;">
+      We received a request to reset your password. Click the button below to choose a new one.
+    </p>
+
+    <!-- CTA -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+      <tr>
+        <td align="center">
+          <a href="${resetUrl}"
+             style="display:inline-block;background-color:#be123c;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;padding:14px 32px;border-radius:12px;">
+            🔐 Reset Password
+          </a>
+        </td>
+      </tr>
+    </table>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+      <tr>
+        <td style="background-color:#fafaf9;border-radius:12px;padding:20px;">
+          <p style="margin:0 0 8px;font-size:14px;font-weight:600;color:#1c1917;">Didn't request this?</p>
+          <p style="margin:0;font-size:14px;color:#57534e;line-height:1.5;">
+            If you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged.
+          </p>
+        </td>
+      </tr>
+    </table>
+
+    <p style="margin:0;font-size:12px;color:#a8a29e;text-align:center;">
+      This link expires in 72 hours.
+    </p>
+  `;
+
+  return {
+    subject: "Reset your YUM ScholarHub password",
+    html: wrapInEmailLayout(bodyContent),
+    text: `Reset your password by visiting: ${resetUrl} — This link expires in 72 hours. If you didn't request this, ignore this email.`,
+  };
+}
+
+export async function sendPasswordResetEmail(params: {
+  recipientEmail: string;
+  resetUrl: string;
+}) {
+  const env = getEnv();
+  const content = buildPasswordResetEmail({ resetUrl: params.resetUrl });
+
+  await getTransporter().sendMail({
+    from: env.SMTP_FROM,
+    to: params.recipientEmail,
+    subject: content.subject,
+    html: content.html,
+    text: content.text,
   });
 }
 

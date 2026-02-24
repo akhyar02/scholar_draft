@@ -216,6 +216,15 @@ export interface EmailNotificationsTable {
   updated_at: Generated<Date>;
 }
 
+export interface PasswordResetTokensTable {
+  id: Generated<string>;
+  user_id: string;
+  token_hash: string;
+  expires_at: Date;
+  used_at: Date | null;
+  created_at: Generated<Date>;
+}
+
 export interface Database {
   users: UsersTable;
   student_profiles: StudentProfilesTable;
@@ -228,6 +237,7 @@ export interface Database {
   application_attachments: ApplicationAttachmentsTable;
   application_status_history: ApplicationStatusHistoryTable;
   email_notifications: EmailNotificationsTable;
+  password_reset_tokens: PasswordResetTokensTable;
 }
 
 export type User = Selectable<UsersTable>;
