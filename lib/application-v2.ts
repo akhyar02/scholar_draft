@@ -48,6 +48,8 @@ export function createDefaultApplicationFormV2(params: {
       email: params.email,
     },
     familyInfo: {
+      hasFatherGuardian: true,
+      hasMotherGuardian: true,
       fatherGuardian: {
         name: "",
         identificationType: "mykad",
@@ -131,10 +133,16 @@ export function getRequiredAttachmentSlots(form: ApplicationFormPayloadV2) {
   const slots = new Set<string>([
     "personal.studentIdProof",
     "personal.latestTranscript",
-    "family.fatherGuardian.payslip",
-    "family.motherGuardian.payslip",
     "financial.mmuOutstandingInvoice",
   ]);
+
+  if (form.familyInfo.hasFatherGuardian !== false) {
+    slots.add("family.fatherGuardian.payslip");
+  }
+
+  if (form.familyInfo.hasMotherGuardian !== false) {
+    slots.add("family.motherGuardian.payslip");
+  }
 
   for (const sibling of form.familyInfo.siblings.above18Working) {
     slots.add(`siblings.above18Working.${sibling.memberId}.icDoc`);

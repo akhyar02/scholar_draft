@@ -66,6 +66,8 @@ export type ApplicationFormPayloadV2 = {
     email: string;
   };
   familyInfo: {
+    hasFatherGuardian?: boolean;
+    hasMotherGuardian?: boolean;
     fatherGuardian: ParentGuardianPayload;
     motherGuardian: ParentGuardianPayload;
     siblings: {

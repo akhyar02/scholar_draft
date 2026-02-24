@@ -236,19 +236,31 @@ export default async function AdminApplicationDetailPage({
                 <div className="mt-6 grid gap-4 sm:grid-cols-2">
                   <div className="rounded-xl bg-surface-50 p-4 ring-1 ring-surface-200 space-y-1">
                     <p className="text-xs uppercase text-surface-500">Father / Guardian</p>
-                    <p className="text-sm text-surface-900">{v2Form.familyInfo.fatherGuardian.name}</p>
-                    <p className="text-xs text-surface-600">{v2Form.familyInfo.fatherGuardian.relationship} • {v2Form.familyInfo.fatherGuardian.identificationType}: {v2Form.familyInfo.fatherGuardian.identificationNumber}</p>
-                    <p className="text-xs text-surface-600">Age {v2Form.familyInfo.fatherGuardian.age} • Salary MYR {v2Form.familyInfo.fatherGuardian.monthlySalary.toLocaleString()}</p>
-                    <p className="text-xs text-surface-600">{v2Form.familyInfo.fatherGuardian.contactNo}</p>
-                    <p className="text-xs text-surface-600 whitespace-pre-wrap">{v2Form.familyInfo.fatherGuardian.address}</p>
+                    {v2Form.familyInfo.hasFatherGuardian === false ? (
+                      <p className="text-sm text-surface-700">Not provided</p>
+                    ) : (
+                      <>
+                        <p className="text-sm text-surface-900">{v2Form.familyInfo.fatherGuardian.name}</p>
+                        <p className="text-xs text-surface-600">{v2Form.familyInfo.fatherGuardian.relationship} • {v2Form.familyInfo.fatherGuardian.identificationType}: {v2Form.familyInfo.fatherGuardian.identificationNumber}</p>
+                        <p className="text-xs text-surface-600">Age {v2Form.familyInfo.fatherGuardian.age} • Salary MYR {v2Form.familyInfo.fatherGuardian.monthlySalary.toLocaleString()}</p>
+                        <p className="text-xs text-surface-600">{v2Form.familyInfo.fatherGuardian.contactNo}</p>
+                        <p className="text-xs text-surface-600 whitespace-pre-wrap">{v2Form.familyInfo.fatherGuardian.address}</p>
+                      </>
+                    )}
                   </div>
                   <div className="rounded-xl bg-surface-50 p-4 ring-1 ring-surface-200 space-y-1">
                     <p className="text-xs uppercase text-surface-500">Mother / Guardian</p>
-                    <p className="text-sm text-surface-900">{v2Form.familyInfo.motherGuardian.name}</p>
-                    <p className="text-xs text-surface-600">{v2Form.familyInfo.motherGuardian.relationship} • {v2Form.familyInfo.motherGuardian.identificationType}: {v2Form.familyInfo.motherGuardian.identificationNumber}</p>
-                    <p className="text-xs text-surface-600">Age {v2Form.familyInfo.motherGuardian.age} • Salary MYR {v2Form.familyInfo.motherGuardian.monthlySalary.toLocaleString()}</p>
-                    <p className="text-xs text-surface-600">{v2Form.familyInfo.motherGuardian.contactNo}</p>
-                    <p className="text-xs text-surface-600 whitespace-pre-wrap">{v2Form.familyInfo.motherGuardian.address}</p>
+                    {v2Form.familyInfo.hasMotherGuardian === false ? (
+                      <p className="text-sm text-surface-700">Not provided</p>
+                    ) : (
+                      <>
+                        <p className="text-sm text-surface-900">{v2Form.familyInfo.motherGuardian.name}</p>
+                        <p className="text-xs text-surface-600">{v2Form.familyInfo.motherGuardian.relationship} • {v2Form.familyInfo.motherGuardian.identificationType}: {v2Form.familyInfo.motherGuardian.identificationNumber}</p>
+                        <p className="text-xs text-surface-600">Age {v2Form.familyInfo.motherGuardian.age} • Salary MYR {v2Form.familyInfo.motherGuardian.monthlySalary.toLocaleString()}</p>
+                        <p className="text-xs text-surface-600">{v2Form.familyInfo.motherGuardian.contactNo}</p>
+                        <p className="text-xs text-surface-600 whitespace-pre-wrap">{v2Form.familyInfo.motherGuardian.address}</p>
+                      </>
+                    )}
                   </div>
                 </div>
 

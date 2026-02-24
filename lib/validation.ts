@@ -148,6 +148,47 @@ const motherGuardianSchema = parentGuardianBaseSchema.extend({
   relationship: z.enum(MOTHER_GUARDIAN_RELATIONSHIPS),
 });
 
+const draftNumberSchema = z.union([z.number(), z.nan()]);
+
+const draftFatherGuardianSchema = z.object({
+  name: z.string().max(200),
+  identificationType: z.enum(IDENTIFICATION_TYPES),
+  identificationNumber: z.string().max(60),
+  age: draftNumberSchema,
+  address: z.string().max(1000),
+  contactNo: z.string(),
+  monthlySalary: draftNumberSchema,
+  relationship: z.enum(FATHER_GUARDIAN_RELATIONSHIPS),
+});
+
+const draftMotherGuardianSchema = z.object({
+  name: z.string().max(200),
+  identificationType: z.enum(IDENTIFICATION_TYPES),
+  identificationNumber: z.string().max(60),
+  age: draftNumberSchema,
+  address: z.string().max(1000),
+  contactNo: z.string(),
+  monthlySalary: draftNumberSchema,
+  relationship: z.enum(MOTHER_GUARDIAN_RELATIONSHIPS),
+});
+
+function appendNestedIssues(
+  result: z.ZodSafeParseResult<unknown>,
+  ctx: z.RefinementCtx,
+  prefix: (string | number)[],
+) {
+  if (result.success) {
+    return;
+  }
+
+  for (const issue of result.error.issues) {
+    ctx.addIssue({
+      ...issue,
+      path: [...prefix, ...issue.path],
+    });
+  }
+}
+
 const personalInfoSchema = z
   .object({
     fullName: z.string().trim().min(2).max(120),
@@ -190,21 +231,33 @@ const personalInfoSchema = z
     }
   });
 
-const familyInfoSchema = z.object({
-  fatherGuardian: fatherGuardianSchema,
-  motherGuardian: motherGuardianSchema,
-  siblings: z.object({
-    above18Working: z.array(siblingWorkingMemberSchema),
-    above18NonWorking: z.array(siblingMemberBaseSchema),
-    studyInIpt: z.array(siblingMemberBaseSchema),
-    age7to17: z.array(siblingMemberBaseSchema),
-    age6Below: z.array(siblingMemberBaseSchema),
-    specialTreatment: z.object({
-      hasOku: z.boolean(),
-      hasChronicIllness: z.boolean(),
+const familyInfoSchema = z
+  .object({
+    hasFatherGuardian: z.boolean().default(true),
+    hasMotherGuardian: z.boolean().default(true),
+    fatherGuardian: draftFatherGuardianSchema,
+    motherGuardian: draftMotherGuardianSchema,
+    siblings: z.object({
+      above18Working: z.array(siblingWorkingMemberSchema),
+      above18NonWorking: z.array(siblingMemberBaseSchema),
+      studyInIpt: z.array(siblingMemberBaseSchema),
+      age7to17: z.array(siblingMemberBaseSchema),
+      age6Below: z.array(siblingMemberBaseSchema),
+      specialTreatment: z.object({
+        hasOku: z.boolean(),
+        hasChronicIllness: z.boolean(),
+      }),
     }),
-  }),
-});
+  })
+  .superRefine((value, ctx) => {
+    if (value.hasFatherGuardian) {
+      appendNestedIssues(fatherGuardianSchema.safeParse(value.fatherGuardian), ctx, ["fatherGuardian"]);
+    }
+
+    if (value.hasMotherGuardian) {
+      appendNestedIssues(motherGuardianSchema.safeParse(value.motherGuardian), ctx, ["motherGuardian"]);
+    }
+  });
 
 const financialDeclarationSchema = z
   .object({
@@ -240,34 +293,26 @@ export const applicationFormV2Schema = z.object({
 });
 
 const updateFamilyInfoSchema = z.object({
+  hasFatherGuardian: z.boolean().optional(),
+  hasMotherGuardian: z.boolean().optional(),
   fatherGuardian: z.object({
-    name: z.string().trim().min(2).max(200).optional(),
+    name: z.string().max(200).optional(),
     identificationType: z.enum(IDENTIFICATION_TYPES).optional(),
-    identificationNumber: z.string().trim().min(3).max(60).optional(),
-    age: z.number().int().min(18).max(120).optional(),
-    address: z.string().trim().min(5).max(1000).optional(),
-    contactNo: z
-      .string()
-      .transform((value) => normalizePhoneNumber(value))
-      .refine((value) => INTERNATIONAL_PHONE_REGEX.test(value), {
-        message: "Contact number must be in international format (e.g. +60123456789)",
-      }).optional(),
-    monthlySalary: z.number().min(0).max(10_000_000).optional(),
+    identificationNumber: z.string().max(60).optional(),
+    age: draftNumberSchema.optional(),
+    address: z.string().max(1000).optional(),
+    contactNo: z.string().optional(),
+    monthlySalary: draftNumberSchema.optional(),
     relationship: z.enum(FATHER_GUARDIAN_RELATIONSHIPS).optional(),
   }).optional(),
   motherGuardian: z.object({
-    name: z.string().trim().min(2).max(200).optional(),
+    name: z.string().max(200).optional(),
     identificationType: z.enum(IDENTIFICATION_TYPES).optional(),
-    identificationNumber: z.string().trim().min(3).max(60).optional(),
-    age: z.number().int().min(18).max(120).optional(),
-    address: z.string().trim().min(5).max(1000).optional(),
-    contactNo: z
-      .string()
-      .transform((value) => normalizePhoneNumber(value))
-      .refine((value) => INTERNATIONAL_PHONE_REGEX.test(value), {
-        message: "Contact number must be in international format (e.g. +60123456789)",
-      }).optional(),
-    monthlySalary: z.number().min(0).max(10_000_000).optional(),
+    identificationNumber: z.string().max(60).optional(),
+    age: draftNumberSchema.optional(),
+    address: z.string().max(1000).optional(),
+    contactNo: z.string().optional(),
+    monthlySalary: draftNumberSchema.optional(),
     relationship: z.enum(MOTHER_GUARDIAN_RELATIONSHIPS).optional(),
   }).optional(),
   siblings: z
