@@ -4,8 +4,6 @@ import { getDb } from "@/lib/db";
 import { requirePageUser } from "@/lib/page-auth";
 import type { ApplicationStatus } from "@/lib/constants";
 
-export const PAGE_SIZE = 25;
-
 export type ApplicationRow = {
   id: string;
   status: ApplicationStatus;
@@ -19,6 +17,8 @@ export type FetchApplicationsResult = {
   applications: ApplicationRow[];
   total: number;
 };
+
+const PAGE_SIZE = 25;
 
 export async function fetchApplicationsPage({
   page,

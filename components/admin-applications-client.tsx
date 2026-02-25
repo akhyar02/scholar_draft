@@ -6,8 +6,10 @@ import { ArrowRight, User, Inbox, ChevronLeft, ChevronRight } from "lucide-react
 
 import { StatusBadge } from "@/components/status-badge";
 import { AdminApplicationsFilters } from "@/components/admin-applications-filters";
-import { fetchApplicationsPage, PAGE_SIZE } from "@/app/admin/applications/actions";
+import { fetchApplicationsPage } from "@/app/admin/applications/actions";
 import type { ApplicationRow, FetchApplicationsResult } from "@/app/admin/applications/actions";
+
+const PAGE_SIZE = 25;
 import type { ApplicationStatus } from "@/lib/constants";
 
 export type { ApplicationRow };
