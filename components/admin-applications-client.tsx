@@ -26,17 +26,21 @@ export function AdminApplicationsClient({ initialData }: Props) {
   const [applications, setApplications] = useState(initialData.applications);
   const [total, setTotal] = useState(initialData.total);
   const [isPending, startTransition] = useTransition();
+  const [minHeight, setMinHeight] = useState(0);
   const isFirstRender = useRef(true);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
       return;
     }
+    setMinHeight(contentRef.current?.offsetHeight ?? 0);
     startTransition(async () => {
       const result = await fetchApplicationsPage({ page, q, statuses: selectedStatuses });
       setApplications(result.applications);
       setTotal(result.total);
+      setMinHeight(0);
     });
   }, [page, q, selectedStatuses]);
 
@@ -88,53 +92,55 @@ export function AdminApplicationsClient({ initialData }: Props) {
         )}
       </div>
 
-      {applications.length === 0 && !isPending ? (
-        <div className="rounded-2xl border-2 border-dashed border-surface-200 bg-white/60 p-16 text-center backdrop-blur-sm animate-fade-in-up animate-delay-100">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-surface-100 text-surface-400">
-            <Inbox className="h-8 w-8" />
+      <div ref={contentRef} style={minHeight ? { minHeight } : undefined}>
+        {applications.length === 0 && !isPending ? (
+          <div className="rounded-2xl border-2 border-dashed border-surface-200 bg-white/60 p-16 text-center backdrop-blur-sm animate-fade-in-up animate-delay-100">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-surface-100 text-surface-400">
+              <Inbox className="h-8 w-8" />
+            </div>
+            <h3 className="mt-6 text-lg font-semibold text-surface-900">
+              {hasActiveFilters ? "No matching applications" : "No applications yet"}
+            </h3>
+            <p className="mt-2 text-surface-500">
+              {hasActiveFilters
+                ? "Try changing the search term or stage status filters."
+                : "There are currently no applications to review."}
+            </p>
           </div>
-          <h3 className="mt-6 text-lg font-semibold text-surface-900">
-            {hasActiveFilters ? "No matching applications" : "No applications yet"}
-          </h3>
-          <p className="mt-2 text-surface-500">
-            {hasActiveFilters
-              ? "Try changing the search term or stage status filters."
-              : "There are currently no applications to review."}
-          </p>
-        </div>
-      ) : (
-        <div className={`grid gap-4 transition-opacity duration-150 ${isPending ? "opacity-50" : "opacity-100"}`}>
-          {applications.map((application, i) => (
-            <article
-              key={application.id}
-              className={`card-hover group relative flex min-w-0 flex-col justify-between gap-4 rounded-2xl bg-white/80 p-6 shadow-sm ring-1 ring-surface-200/60 backdrop-blur-sm sm:flex-row sm:items-center animate-fade-in-up animate-delay-${Math.min(i, 3) * 100}`}
-            >
-              <div className="min-w-0 space-y-2">
-                <h2 className="break-words text-lg font-bold text-surface-900 transition-colors group-hover:text-primary-600">
-                  {application.scholarship_title}
-                </h2>
-                <div className="flex min-w-0 items-start gap-2 text-sm text-surface-400">
-                  <User className="mt-0.5 h-4 w-4 shrink-0" />
-                  <span className="min-w-0 break-all">
-                    {application.student_name} ({application.student_email})
-                  </span>
+        ) : (
+          <div className={`grid gap-4 transition-opacity duration-150 ${isPending ? "opacity-50" : "opacity-100"}`}>
+            {applications.map((application, i) => (
+              <article
+                key={application.id}
+                className={`card-hover group relative flex min-w-0 flex-col justify-between gap-4 rounded-2xl bg-white/80 p-6 shadow-sm ring-1 ring-surface-200/60 backdrop-blur-sm sm:flex-row sm:items-center animate-fade-in-up animate-delay-${Math.min(i, 3) * 100}`}
+              >
+                <div className="min-w-0 space-y-2">
+                  <h2 className="break-words text-lg font-bold text-surface-900 transition-colors group-hover:text-primary-600">
+                    {application.scholarship_title}
+                  </h2>
+                  <div className="flex min-w-0 items-start gap-2 text-sm text-surface-400">
+                    <User className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span className="min-w-0 break-all">
+                      {application.student_name} ({application.student_email})
+                    </span>
+                  </div>
                 </div>
-              </div>
 
-              <div className="flex w-full flex-col items-start gap-3 sm:w-auto sm:items-end">
-                <StatusBadge status={application.status} />
-                <Link
-                  className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-600 transition-colors hover:text-primary-700"
-                  href={`/admin/applications/${application.id}`}
-                >
-                  Open Review
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                </Link>
-              </div>
-            </article>
-          ))}
-        </div>
-      )}
+                <div className="flex w-full flex-col items-start gap-3 sm:w-auto sm:items-end">
+                  <StatusBadge status={application.status} />
+                  <Link
+                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-600 transition-colors hover:text-primary-700"
+                    href={`/admin/applications/${application.id}`}
+                  >
+                    Open Review
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </div>
 
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-3 animate-fade-in-up animate-delay-200">
