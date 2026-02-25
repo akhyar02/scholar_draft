@@ -34,7 +34,6 @@ export async function POST(
       "a.status",
       "u.email as student_email",
       "s.title as scholarship_title",
-      "a.admin_notes",
     ])
     .where("a.id", "=", id)
     .executeTakeFirst();
@@ -47,19 +46,11 @@ export async function POST(
     return jsonError(409, "INVALID_TRANSITION", `${current.status} -> ${parsed.data.toStatus} is not allowed`);
   }
 
-  const normalizedAdminNotes =
-    parsed.data.adminNotes === undefined
-      ? undefined
-      : parsed.data.adminNotes.trim() === ""
-        ? null
-        : parsed.data.adminNotes;
-
   await db.transaction().execute(async (trx) => {
     await trx
       .updateTable("applications")
       .set({
         status: parsed.data.toStatus,
-        ...(normalizedAdminNotes !== undefined ? { admin_notes: normalizedAdminNotes } : {}),
         updated_at: new Date(),
       })
       .where("id", "=", id)
@@ -76,6 +67,18 @@ export async function POST(
         reason: parsed.data.reason ?? null,
       })
       .execute();
+
+    if (parsed.data.adminNotes?.trim()) {
+      await trx
+        .insertInto("application_admin_notes")
+        .values({
+          id: crypto.randomUUID(),
+          application_id: id,
+          content: parsed.data.adminNotes.trim(),
+          created_by_user_id: auth.user.id,
+        })
+        .execute();
+    }
   });
 
   await queueAndSendStatusEmail({

@@ -35,6 +35,14 @@ export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
 export type UserRole = "admin" | "student";
 
+export interface ApplicationAdminNotes {
+  application_id: string;
+  content: string;
+  created_at: Generated<Timestamp>;
+  created_by_user_id: string;
+  id: string;
+}
+
 export interface ApplicationAttachments {
   application_id: string;
   id: string;
@@ -174,6 +182,7 @@ export interface Users {
 }
 
 export interface DB {
+  application_admin_notes: ApplicationAdminNotes;
   application_attachments: ApplicationAttachments;
   application_documents: ApplicationDocuments;
   application_form_data: ApplicationFormData;

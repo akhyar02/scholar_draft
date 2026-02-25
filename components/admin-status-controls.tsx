@@ -9,16 +9,14 @@ import { APPLICATION_STATUSES, type ApplicationStatus } from "@/lib/constants";
 export function AdminStatusControls({
   applicationId,
   currentStatus,
-  initialAdminNotes,
 }: {
   applicationId: string;
   currentStatus: ApplicationStatus;
-  initialAdminNotes: string | null;
 }) {
   const router = useRouter();
   const [toStatus, setToStatus] = useState<ApplicationStatus>(currentStatus);
   const [reason, setReason] = useState("");
-  const [adminNotes, setAdminNotes] = useState(initialAdminNotes ?? "");
+  const [adminNotes, setAdminNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,6 +27,7 @@ export function AdminStatusControls({
     try {
       await adminApi.updateApplicationStatus(applicationId, { toStatus, reason, adminNotes });
 
+      setAdminNotes("");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update status");
@@ -85,10 +84,10 @@ export function AdminStatusControls({
       </div>
 
       <div className="space-y-1">
-        <label className="text-sm font-medium text-surface-700">Admin Notes (Internal)</label>
+        <label className="text-sm font-medium text-surface-700">Add Note (Internal)</label>
         <textarea
           className="w-full rounded-xl border-0 bg-surface-50 px-4 py-3 text-surface-900 shadow-sm ring-1 ring-inset ring-surface-200 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6 transition-all"
-          placeholder="Private notes for other admins..."
+          placeholder="Add a private note for other admins..."
           value={adminNotes}
           onChange={(event) => setAdminNotes(event.target.value)}
           rows={4}

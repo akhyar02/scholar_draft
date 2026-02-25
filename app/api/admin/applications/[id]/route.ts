@@ -29,7 +29,6 @@ export async function GET(
       "a.submitted_at",
       "a.locked_at",
       "a.reopened_at",
-      "a.admin_notes",
       "a.created_at",
       "a.updated_at",
       "s.title as scholarship_title",

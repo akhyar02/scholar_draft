@@ -77,7 +77,6 @@ export default async function AdminApplicationDetailPage({
     .select([
       "a.id",
       "a.status",
-      "a.admin_notes",
       "a.submitted_at",
       "a.updated_at",
       "s.title as scholarship_title",
@@ -96,7 +95,7 @@ export default async function AdminApplicationDetailPage({
     notFound();
   }
 
-  const [formData, attachments, legacyDocuments, history, applicationOptions] = await Promise.all([
+  const [formData, attachments, legacyDocuments, history, applicationOptions, adminNotes] = await Promise.all([
     db
       .selectFrom("application_form_data")
       .select("payload")
@@ -121,6 +120,13 @@ export default async function AdminApplicationDetailPage({
       .orderBy("changed_at", "desc")
       .execute(),
     listApplicationOptionsTree(db),
+    db
+      .selectFrom("application_admin_notes as n")
+      .innerJoin("users as nu", "nu.id", "n.created_by_user_id")
+      .select(["n.id", "n.content", "n.created_at", "nu.email as created_by_email"])
+      .where("n.application_id", "=", id)
+      .orderBy("n.created_at", "desc")
+      .execute(),
   ]);
 
   const payload = formData?.payload ?? {};
@@ -363,14 +369,21 @@ export default async function AdminApplicationDetailPage({
 
           <section className="rounded-2xl bg-white/80 backdrop-blur-sm p-8 shadow-sm ring-1 ring-surface-200/60">
             <h2 className="text-xl font-bold text-surface-900">Admin Notes</h2>
-            {application.admin_notes ? (
-              <p className="mt-6 whitespace-pre-wrap rounded-xl bg-surface-50 p-4 text-sm leading-relaxed text-surface-800 ring-1 ring-surface-200">
-                {application.admin_notes}
-              </p>
-            ) : (
+            {adminNotes.length === 0 ? (
               <p className="mt-6 rounded-xl bg-surface-50 p-4 text-sm text-surface-600 ring-1 ring-surface-200">
                 No admin notes yet.
               </p>
+            ) : (
+              <div className="mt-6 space-y-4">
+                {adminNotes.map((note) => (
+                  <div key={note.id} className="rounded-xl bg-surface-50 p-4 ring-1 ring-surface-200">
+                    <p className="whitespace-pre-wrap text-sm leading-relaxed text-surface-800">{note.content}</p>
+                    <p className="mt-2 text-xs text-surface-500">
+                      {note.created_by_email} · {new Date(note.created_at).toLocaleString()}
+                    </p>
+                  </div>
+                ))}
+              </div>
             )}
           </section>
 
@@ -402,7 +415,6 @@ export default async function AdminApplicationDetailPage({
             <AdminStatusControls
               applicationId={application.id}
               currentStatus={application.status}
-              initialAdminNotes={application.admin_notes}
             />
           </div>
         </div>
