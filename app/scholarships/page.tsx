@@ -127,13 +127,13 @@ export default async function ScholarshipsPage() {
                     <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-info-50 text-info-600">
                       <Calendar className="h-4 w-4" />
                     </div>
-                    <span>{new Date(scholarship.deadline_at).toLocaleDateString()}</span>
+                    <span>{new Date(scholarship.deadline_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span>
                   </div>
                 </div>
 
                 <Link
                   href={`/scholarships/${scholarship.slug}`}
-                  className="mt-8 flex items-center justify-center gap-2 w-full rounded-xl bg-surface-950 py-3 text-center text-sm font-semibold text-white transition-all hover:bg-primary-600 hover:shadow-lg hover:shadow-primary-500/20"
+                  className="btn-gradient mt-8 flex items-center justify-center gap-2 w-full rounded-xl py-3 text-center text-sm font-semibold text-white shadow-sm"
                 >
                   View Details
                   <ArrowRight className="h-4 w-4" />

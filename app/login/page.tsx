@@ -12,7 +12,7 @@ export default async function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-16rem)] items-center justify-center">
+    <div className="flex min-h-[calc(100vh-5rem)] items-center justify-center py-12">
       <div className="w-full max-w-5xl overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-surface-200/50 flex flex-col md:flex-row animate-fade-in-up">
         {/* Image Section */}
         <div className="relative hidden md:block md:w-1/2 bg-surface-950">

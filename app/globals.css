@@ -272,22 +272,22 @@ body {
     0 4px 12px -2px rgba(12, 10, 9, 0.06);
 }
 
-/* Gradient text */
+/* Gradient text — crimson only, no orange */
 .text-gradient {
-  background: linear-gradient(135deg, var(--theme-primary-500), var(--theme-accent-500));
+  background: linear-gradient(135deg, var(--theme-primary-700), var(--theme-primary-500));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* Gradient button */
+/* Gradient button — richer, deeper crimson */
 .btn-gradient {
-  background: linear-gradient(135deg, var(--theme-primary-600), var(--theme-primary-500));
+  background: linear-gradient(135deg, var(--theme-primary-800), var(--theme-primary-600));
   transition: all 240ms ease;
 }
 .btn-gradient:hover {
-  background: linear-gradient(135deg, var(--theme-primary-500), var(--theme-primary-400));
-  box-shadow: 0 8px 24px -4px rgba(244, 63, 94, 0.35);
+  background: linear-gradient(135deg, var(--theme-primary-700), var(--theme-primary-500));
+  box-shadow: 0 8px 28px -4px rgba(190, 18, 60, 0.45);
 }
 
 /* Stat number font-feature for tabular nums */
@@ -347,6 +347,25 @@ body {
 
 .animate-shimmer {
   animation: shimmer 3s ease-in-out infinite;
+}
+
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-fade-in-right {
+  animation: fadeInRight 0.7s ease-out both;
+}
+
+.animate-delay-400 {
+  animation-delay: 0.4s;
 }
 
 .application-form-shell {

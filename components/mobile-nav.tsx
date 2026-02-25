@@ -26,7 +26,7 @@ function MobileNavLink({
       href={href}
       className={`rounded-xl px-4 py-3 transition-all text-lg font-medium ${
         isActive
-          ? "text-white bg-white/20 font-semibold"
+          ? "text-white font-semibold"
           : "text-white/80 hover:text-white hover:bg-white/10"
       }`}
       onClick={onClick}
