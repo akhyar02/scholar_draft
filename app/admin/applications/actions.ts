@@ -18,16 +18,33 @@ export type FetchApplicationsResult = {
   total: number;
 };
 
+export type ScholarshipOption = {
+  id: string;
+  title: string;
+};
+
 const PAGE_SIZE = 25;
+
+export async function fetchScholarshipsForFilter(): Promise<ScholarshipOption[]> {
+  await requirePageUser("admin");
+  const db = getDb();
+  return db
+    .selectFrom("scholarships")
+    .select(["id", "title"])
+    .orderBy("title", "asc")
+    .execute();
+}
 
 export async function fetchApplicationsPage({
   page,
   q,
   statuses,
+  scholarshipId,
 }: {
   page: number;
   q: string;
   statuses: ApplicationStatus[];
+  scholarshipId?: string;
 }): Promise<FetchApplicationsResult> {
   await requirePageUser("admin");
   const db = getDb();
@@ -38,6 +55,7 @@ export async function fetchApplicationsPage({
     .innerJoin("student_profiles as p", "p.user_id", "a.student_user_id")
     .innerJoin("users as u", "u.id", "a.student_user_id")
     .$if(statuses.length > 0, (qb) => qb.where("a.status", "in", statuses))
+    .$if(!!scholarshipId, (qb) => qb.where("a.scholarship_id", "=", scholarshipId!))
     .$if(!!q, (qb) =>
       qb.where((eb) =>
         eb.or([eb("p.full_name", "ilike", `%${q}%`), eb("u.email", "ilike", `%${q}%`)]),

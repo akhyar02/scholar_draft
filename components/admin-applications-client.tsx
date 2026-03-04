@@ -7,7 +7,7 @@ import { ArrowRight, User, Inbox, ChevronLeft, ChevronRight } from "lucide-react
 import { StatusBadge } from "@/components/status-badge";
 import { AdminApplicationsFilters } from "@/components/admin-applications-filters";
 import { fetchApplicationsPage } from "@/app/admin/applications/actions";
-import type { ApplicationRow, FetchApplicationsResult } from "@/app/admin/applications/actions";
+import type { ApplicationRow, FetchApplicationsResult, ScholarshipOption } from "@/app/admin/applications/actions";
 
 const PAGE_SIZE = 25;
 import type { ApplicationStatus } from "@/lib/constants";
@@ -16,12 +16,14 @@ export type { ApplicationRow };
 
 interface Props {
   initialData: FetchApplicationsResult;
+  scholarships: ScholarshipOption[];
 }
 
-export function AdminApplicationsClient({ initialData }: Props) {
+export function AdminApplicationsClient({ initialData, scholarships }: Props) {
   const [inputValue, setInputValue] = useState("");
   const [q, setQ] = useState("");
   const [selectedStatuses, setSelectedStatuses] = useState<ApplicationStatus[]>([]);
+  const [selectedScholarshipId, setSelectedScholarshipId] = useState("");
   const [page, setPage] = useState(1);
   const [applications, setApplications] = useState(initialData.applications);
   const [total, setTotal] = useState(initialData.total);
@@ -37,15 +39,15 @@ export function AdminApplicationsClient({ initialData }: Props) {
     }
     setMinHeight(contentRef.current?.offsetHeight ?? 0);
     startTransition(async () => {
-      const result = await fetchApplicationsPage({ page, q, statuses: selectedStatuses });
+      const result = await fetchApplicationsPage({ page, q, statuses: selectedStatuses, scholarshipId: selectedScholarshipId });
       setApplications(result.applications);
       setTotal(result.total);
       setMinHeight(0);
     });
-  }, [page, q, selectedStatuses]);
+  }, [page, q, selectedStatuses, selectedScholarshipId]);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const hasActiveFilters = q.length > 0 || selectedStatuses.length > 0;
+  const hasActiveFilters = q.length > 0 || selectedStatuses.length > 0 || selectedScholarshipId.length > 0;
   const rangeStart = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
   const rangeEnd = Math.min(page * PAGE_SIZE, total);
 
@@ -66,6 +68,7 @@ export function AdminApplicationsClient({ initialData }: Props) {
     setInputValue("");
     setQ("");
     setSelectedStatuses([]);
+    setSelectedScholarshipId("");
     setPage(1);
   }
 
@@ -76,6 +79,9 @@ export function AdminApplicationsClient({ initialData }: Props) {
         onInputChange={setInputValue}
         selectedStatuses={selectedStatuses}
         onStatusToggle={toggleStatus}
+        scholarships={scholarships}
+        selectedScholarshipId={selectedScholarshipId}
+        onScholarshipChange={(id) => { setSelectedScholarshipId(id); setPage(1); }}
         onSearch={handleSearch}
         onClear={handleClear}
       />

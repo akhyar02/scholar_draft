@@ -1,10 +1,13 @@
 import { AdminApplicationsClient } from "@/components/admin-applications-client";
-import { fetchApplicationsPage } from "@/app/admin/applications/actions";
+import { fetchApplicationsPage, fetchScholarshipsForFilter } from "@/app/admin/applications/actions";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminApplicationsPage() {
-  const initialData = await fetchApplicationsPage({ page: 1, q: "", statuses: [] });
+  const [initialData, scholarships] = await Promise.all([
+    fetchApplicationsPage({ page: 1, q: "", statuses: [] }),
+    fetchScholarshipsForFilter(),
+  ]);
 
   return (
     <div className="space-y-8">
@@ -13,7 +16,7 @@ export default async function AdminApplicationsPage() {
         <p className="mt-2 text-surface-500">Review and manage student scholarship applications.</p>
       </div>
 
-      <AdminApplicationsClient initialData={initialData} />
+      <AdminApplicationsClient initialData={initialData} scholarships={scholarships} />
     </div>
   );
 }

@@ -2,12 +2,16 @@
 
 import { APPLICATION_STATUSES, STATUS_LABELS } from "@/lib/constants";
 import type { ApplicationStatus } from "@/lib/constants";
+import type { ScholarshipOption } from "@/app/admin/applications/actions";
 
 interface Props {
   inputValue: string;
   onInputChange: (value: string) => void;
   selectedStatuses: ApplicationStatus[];
   onStatusToggle: (status: ApplicationStatus) => void;
+  scholarships: ScholarshipOption[];
+  selectedScholarshipId: string;
+  onScholarshipChange: (id: string) => void;
   onSearch: (e: React.FormEvent) => void;
   onClear: () => void;
 }
@@ -17,6 +21,9 @@ export function AdminApplicationsFilters({
   onInputChange,
   selectedStatuses,
   onStatusToggle,
+  scholarships,
+  selectedScholarshipId,
+  onScholarshipChange,
   onSearch,
   onClear,
 }: Props) {
@@ -25,7 +32,7 @@ export function AdminApplicationsFilters({
       onSubmit={onSearch}
       className="rounded-2xl bg-white/80 p-5 shadow-sm ring-1 ring-surface-200/60 backdrop-blur-sm animate-fade-in-up animate-delay-100"
     >
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-end">
         <label className="block">
           <span className="text-sm font-semibold text-surface-700">Search student</span>
           <input
@@ -37,7 +44,23 @@ export function AdminApplicationsFilters({
           />
         </label>
 
-        <div className="flex gap-2">
+        <label className="block">
+          <span className="text-sm font-semibold text-surface-700">Scholarship</span>
+          <select
+            value={selectedScholarshipId}
+            onChange={(e) => onScholarshipChange(e.target.value)}
+            className="mt-2 w-full rounded-xl border-0 bg-surface-50 px-4 py-2.5 text-sm text-surface-900 ring-1 ring-surface-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400"
+          >
+            <option value="">All scholarships</option>
+            {scholarships.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.title}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <div className="flex gap-2 sm:col-span-2 lg:col-span-1">
           <button
             type="submit"
             className="inline-flex items-center justify-center rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-700"
